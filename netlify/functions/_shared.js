@@ -45,7 +45,8 @@ function parseBody(event) {
 async function sb(pathAndQuery, { method = 'GET', body, prefer } = {}) {
   const url = process.env.SUPABASE_URL, key = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !key) throw new Error('supabase-not-configured');
-  const res = await fetch(`${url.replace(/\/$/, '')}/rest/v1/${pathAndQuery}`, {
+  const base = url.trim().replace(/\/+$/, '').replace(/\/rest\/v1$/, '');   // aceita a URL com ou sem /rest/v1
+  const res = await fetch(`${base}/rest/v1/${pathAndQuery}`, {
     method,
     headers: {
       apikey: key, 'Content-Type': 'application/json',
