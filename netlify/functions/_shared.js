@@ -92,9 +92,12 @@ function validatePerson(p, cfg) {
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 async function checkAdmin(event) {
-  const real = process.env.ADMIN_PASSWORD;
+  // Tolerante: ignora espaço/quebra de linha sobrando na variável do Netlify e aceita a senha codificada no cabeçalho.
+  const real = String(process.env.ADMIN_PASSWORD || '').trim();
   if (!real) return { status: 503, error: 'ADMIN_PASSWORD não configurada no Netlify.' };
-  const given = Buffer.from(String(event.headers['x-admin-password'] || ''));
+  let raw = String(event.headers['x-admin-password'] || '');
+  try { raw = decodeURIComponent(raw); } catch { /* usa como veio */ }
+  const given = Buffer.from(raw.trim());
   const want = Buffer.from(real);
   if (given.length === want.length && crypto.timingSafeEqual(given, want)) return null;
   await sleep(600); // dificulta tentativa e erro

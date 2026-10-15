@@ -193,8 +193,10 @@ async function handleApi(req, res, url) {
 
   // ---------- Admin ----------
   if (url.pathname.startsWith('/api/admin/')) {
-    const given = Buffer.from(String(req.headers['x-admin-password'] || ''));
-    const real = Buffer.from(ADMIN_PASSWORD);
+    let raw = String(req.headers['x-admin-password'] || '');
+    try { raw = decodeURIComponent(raw); } catch { /* usa como veio */ }
+    const given = Buffer.from(raw.trim());
+    const real = Buffer.from(String(ADMIN_PASSWORD).trim());
     if (given.length !== real.length || !crypto.timingSafeEqual(given, real))
       return send(res, 401, { error: 'Senha incorreta.' });
 

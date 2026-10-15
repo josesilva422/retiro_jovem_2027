@@ -267,7 +267,7 @@ let pw = '', data = null, cfg = { prices: {} };
 const F = { status: 'todas', lodge: null, dist: null };   // lodge/dist: clique de novo para desmarcar
 try { pw = sessionStorage.getItem('rc_pw') || ''; } catch {}
 
-const api = (p, o = {}) => fetch(p, { ...o, headers: { 'x-admin-password': pw, 'Content-Type': 'application/json' } });
+const api = (p, o = {}) => fetch(p, { ...o, headers: { 'x-admin-password': encodeURIComponent(pw), 'Content-Type': 'application/json' } });
 function toast(t) { const e = $('#toast'); e.textContent = t; e.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(() => e.hidden = true, 2600); }
 
 async function load(silent) {
