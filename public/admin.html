@@ -307,10 +307,10 @@ function render() {
   const camp = people.filter(p => p.lodging === 'camping').length;
   const cnt = k => M.filter(x => x.r.status === k).length;
   // Recebido = pagamentos únicos confirmados + parcelas pagas; A receber = o restante das inscrições ativas
-  const recvOf = r => r.payment.plan ? r.payment.plan.filter(i => i.paid).reduce((s, i) => s + i.amount, 0) : (r.status === 'confirmada' ? (r.payment.total || 0) : 0);
+  const recvOf = r => r.payment.plan ? r.payment.plan.filter(i => i.paid).reduce((s, i) => s + i.amount, 0) : (r.status === 'confirmada' ? netOf(r) : 0);
   const ratio = x => (x.r.payment.total ? share(x.r, x.m) / x.r.payment.total : 1);
   const received = live.reduce((s, x) => s + recvOf(x.r) * ratio(x), 0);
-  const pending = live.reduce((s, x) => s + ((x.r.payment.total || 0) - recvOf(x.r)) * ratio(x), 0);
+  const pending = live.reduce((s, x) => s + (netOf(x.r) - recvOf(x.r)) * ratio(x), 0);
   const sc = $('#scope');
   sc.hidden = !(F.lodge || F.dist);
   sc.textContent = 'Números filtrados: ' + [F.dist, F.lodge && (F.lodge === 'camping' ? 'Camping' : 'Dormitório')].filter(Boolean).join(' · ');
@@ -321,7 +321,7 @@ function render() {
      <div class="stat"><b>${cnt('confirmada')}</b><span>Confirmadas</span></div>
      <div class="stat"><b>${camp}</b><span>Camping</span></div>
      <div class="stat"><b>${people.length - camp}</b><span>Dormitório</span></div>
-     <div class="stat money"><b>${brl(received)}</b><span>Recebido</span><em>A receber: ${brl(pending)}</em></div>`;
+     <div class="stat money"><b>${brl(received)}</b><span>Recebido (líquido)</span><em>A receber: ${brl(pending)}</em></div>`;
 
   // Filtros (contagens gerais, sem considerar os próprios filtros)
   const allPeople = R.filter(r => r.status !== 'cancelada').flatMap(r => r.participants);
@@ -351,6 +351,9 @@ function render() {
     : `<div class="empty">${R.length ? 'Nenhuma inscrição encontrada com esses filtros.' : 'Ainda não há inscrições. Assim que alguém se cadastrar, aparece aqui.'}</div>`;
 }
 
+// A taxa da maquininha fica com a empresa da maquininha: para a organização conta só o subtotal.
+const feeAmount = p => (p.method === 'cartao' ? Math.round((p.total - p.subtotal) * 100) / 100 : 0);
+const netOf = r => (r.payment.method === 'cartao' ? r.payment.subtotal : r.payment.total) || 0;
 const today = () => new Date().toISOString().slice(0, 10);
 const fmtD = iso => iso.split('-').reverse().join('/');
 const nextInst = r => (r.payment.plan || []).find(x => !x.paid);
@@ -378,7 +381,7 @@ function card(r, shown) {
       <div class="c-tags"><span class="lodge ${p.lodging}">${LODGE[p.lodging]}</span>${needAuth(r) ? '<span class="flag" title="Menor sem responsável legal: autorização assinada no dia">Autorização</span>' : ''}${anyHealth(r) ? '<span class="flag w" title="Há alergia, restrição, medicamento ou acessibilidade informados">Saúde</span>' : ''}${r.info && !r.info.imageConsent ? '<span class="flag" title="Não autorizou o uso de imagem">Sem imagem</span>' : ''}</div>
       <div class="c-meta"><span>${p.cpf ? 'CPF ' + fmtCpf(p.cpf) : 'Sem CPF'}</span><a href="https://wa.me/55${esc(p.phone)}" target="_blank" rel="noopener">${fmtPhone(p.phone)}</a></div>
     </div>
-    <div class="c-pay"><div><span>${methodLabel(r.payment)}</span>${r.payment.plan ? `<small class="${lateInst(r) ? 'late' : ''}">${r.payment.plan.filter(x => x.paid).length}/${r.payment.plan.length} pagas${nextInst(r) ? ' · próxima ' + fmtD(nextInst(r).due) + (lateInst(r) ? ' (atrasada)' : '') : ''}</small>` : ''}</div><b>${brl(r.payment.total)}</b></div>
+    <div class="c-pay"><div><span>${methodLabel(r.payment)}</span>${r.payment.plan ? `<small class="${lateInst(r) ? 'late' : ''}">${r.payment.plan.filter(x => x.paid).length}/${r.payment.plan.length} pagas${nextInst(r) ? ' · próxima ' + fmtD(nextInst(r).due) + (lateInst(r) ? ' (atrasada)' : '') : ''}</small>` : ''}${r.payment.method === 'cartao' ? `<small>líquido ${brl(r.payment.subtotal)} · taxa ${brl(feeAmount(r.payment))} (maquininha)</small>` : ''}</div><b>${brl(r.payment.total)}</b></div>
     <div class="card-a">${actionBtns(r)}<button class="btn light xs" data-det="${r.id}" type="button">Detalhes</button></div></article>`;
 }
 
@@ -397,7 +400,7 @@ function payBlock(r) {
   const pay = r.payment, pl = pay.plan;
   const kv = `<dl class="kv"><dt>Forma</dt><dd>${methodLabel(pay)}${pay.method === 'crediario' ? ' (uma parcela por mês)' : ''}</dd>
     <dt>Subtotal</dt><dd>${brl(pay.subtotal)}</dd>${pay.discount ? `<dt>Desconto</dt><dd>${brl(pay.discount)}${pay.combo ? ' (combo familiar)' : ' (à vista)'}</dd>` : ''}${pay.feePercent ? `<dt>Taxa</dt><dd>${String(pay.feePercent).replace('.', ',')}%</dd>` : ''}
-    <dt>Total</dt><dd><b>${brl(pay.total)}</b></dd><dt>Pago</dt><dd>${pl ? pl.filter(x => x.paid).length + ' de ' + pl.length + ' parcelas' : (r.status === 'confirmada' ? 'Sim' : 'Não')}</dd></dl>`;
+    ${pay.method === 'cartao' ? `<dt>Taxa da maquininha</dt><dd>${brl(feeAmount(pay))} <small>(fica com a empresa da maquininha)</small></dd>` : ''}<dt>Total cobrado</dt><dd><b>${brl(pay.total)}</b></dd>${pay.method === 'cartao' ? `<dt>Líquido da organização</dt><dd><b>${brl(pay.subtotal)}</b></dd>` : ''}<dt>Pago</dt><dd>${pl ? pl.filter(x => x.paid).length + ' de ' + pl.length + ' parcelas' : (r.status === 'confirmada' ? 'Sim' : 'Não')}</dd></dl>`;
   if (!pl) return kv;
   return kv + `<div class="sec-t" style="margin-top:14px">Parcelas</div><div class="inst">${pl.map(x => {
     const late = !x.paid && x.due < today();

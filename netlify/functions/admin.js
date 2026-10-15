@@ -59,9 +59,9 @@ exports.handler = async event => {
       const r = await sb('registrations?select=*&order=created_at.asc');
       if (!r.ok) throw new Error('db');
       const q = v => `"${String(v ?? '').replace(/"/g, '""')}"`;
-      const rows = [['Protocolo', 'Status', 'Data', 'Nome', 'Idade', 'CPF', 'Telefone', 'Convidado por', 'Acomodação', 'Pagamento', 'Parcelas', 'Parcelas pagas', 'Total da inscrição', 'Contato de emergência', 'Telefone de emergência', 'Alergia', 'Restrição alimentar', 'Medicamento controlado', 'Acessibilidade', 'Autorização de menores', 'Uso de imagem']];
+      const rows = [['Protocolo', 'Status', 'Data', 'Nome', 'Idade', 'CPF', 'Telefone', 'Convidado por', 'Acomodação', 'Pagamento', 'Parcelas', 'Parcelas pagas', 'Total da inscrição', 'Valor líquido (organização)', 'Contato de emergência', 'Telefone de emergência', 'Alergia', 'Restrição alimentar', 'Medicamento controlado', 'Acessibilidade', 'Autorização de menores', 'Uso de imagem']];
       for (const x of r.data) for (const p of x.participants)
-        rows.push([x.protocol, x.status, x.created_at, p.name, p.age, p.cpf, p.phone, p.district, p.lodging, x.payment.method, x.payment.installments, x.payment.plan ? x.payment.plan.filter(i => i.paid).length + '/' + x.payment.plan.length : '', x.payment.total, ...infoCols(x, p, p === x.participants[0])]);
+        rows.push([x.protocol, x.status, x.created_at, p.name, p.age, p.cpf, p.phone, p.district, p.lodging, x.payment.method, x.payment.installments, x.payment.plan ? x.payment.plan.filter(i => i.paid).length + '/' + x.payment.plan.length : '', x.payment.total, x.payment.method === 'cartao' ? x.payment.subtotal : x.payment.total, ...infoCols(x, p, p === x.participants[0])]);
       return {
         statusCode: 200,
         headers: { 'Content-Type': 'text/csv; charset=utf-8', 'Content-Disposition': 'attachment; filename="inscricoes.csv"', 'Cache-Control': 'no-store' },

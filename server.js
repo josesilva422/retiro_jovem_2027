@@ -232,9 +232,9 @@ async function handleApi(req, res, url) {
 
     if (req.method === 'GET' && url.pathname === '/api/admin/export.csv') {
       const q = v => `"${String(v ?? '').replace(/"/g, '""')}"`;
-      const rows = [['Protocolo', 'Status', 'Data', 'Nome', 'Idade', 'CPF', 'Telefone', 'Convidado por', 'Acomodação', 'Pagamento', 'Parcelas', 'Parcelas pagas', 'Total da inscrição', 'Contato de emergência', 'Telefone de emergência', 'Alergia', 'Restrição alimentar', 'Medicamento controlado', 'Acessibilidade', 'Autorização de menores', 'Uso de imagem']];
+      const rows = [['Protocolo', 'Status', 'Data', 'Nome', 'Idade', 'CPF', 'Telefone', 'Convidado por', 'Acomodação', 'Pagamento', 'Parcelas', 'Parcelas pagas', 'Total da inscrição', 'Valor líquido (organização)', 'Contato de emergência', 'Telefone de emergência', 'Alergia', 'Restrição alimentar', 'Medicamento controlado', 'Acessibilidade', 'Autorização de menores', 'Uso de imagem']];
       for (const r of readJson(REG_FILE)) for (const p of r.participants)
-        rows.push([r.protocol, r.status, r.createdAt, p.name, p.age, p.cpf, p.phone, p.district, p.lodging, r.payment.method, r.payment.installments, r.payment.plan ? r.payment.plan.filter(x => x.paid).length + '/' + r.payment.plan.length : '', r.payment.total, ...infoCols(r, p, p === r.participants[0])]);
+        rows.push([r.protocol, r.status, r.createdAt, p.name, p.age, p.cpf, p.phone, p.district, p.lodging, r.payment.method, r.payment.installments, r.payment.plan ? r.payment.plan.filter(x => x.paid).length + '/' + r.payment.plan.length : '', r.payment.total, r.payment.method === 'cartao' ? r.payment.subtotal : r.payment.total, ...infoCols(r, p, p === r.participants[0])]);
       return send(res, 200, '﻿' + rows.map(r => r.map(q).join(';')).join('\r\n'),
         { 'Content-Type': 'text/csv; charset=utf-8', 'Content-Disposition': 'attachment; filename="inscricoes.csv"' });
     }
