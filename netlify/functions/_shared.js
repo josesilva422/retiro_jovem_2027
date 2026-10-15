@@ -48,7 +48,9 @@ async function sb(pathAndQuery, { method = 'GET', body, prefer } = {}) {
   const res = await fetch(`${url.replace(/\/$/, '')}/rest/v1/${pathAndQuery}`, {
     method,
     headers: {
-      apikey: key, Authorization: `Bearer ${key}`, 'Content-Type': 'application/json',
+      apikey: key, 'Content-Type': 'application/json',
+      // Chaves antigas (service_role) são JWT e vão também em Authorization; as novas (sb_secret_...) só em apikey.
+      ...(key.startsWith('eyJ') ? { Authorization: `Bearer ${key}` } : {}),
       ...(prefer ? { Prefer: prefer } : {})
     },
     body: body === undefined ? undefined : JSON.stringify(body)
