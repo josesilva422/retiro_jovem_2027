@@ -199,7 +199,7 @@ dialog::backdrop{background:rgba(10,31,64,.62)}
 
 <!-- LOGIN -->
 <main class="login-wrap" id="loginView">
-  <form class="login" id="loginForm" autocomplete="on">
+  <form class="login" id="loginForm" method="post" action="javascript:void(0)" onsubmit="return false" autocomplete="on">
     <h1>Painel da organização</h1>
     <p>Digite a senha para ver as inscrições.</p>
     <input type="text" name="username" value="admin" autocomplete="username" hidden>
@@ -254,6 +254,8 @@ dialog::backdrop{background:rgba(10,31,64,.62)}
 <div class="toast" id="toast" hidden></div>
 
 <script>
+// Segurança: se por qualquer motivo a senha chegar no endereço (?password=...), apaga da barra e do histórico.
+try { if (location.search) history.replaceState(null, '', location.pathname); } catch {}
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const brl = n => Number(n || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
