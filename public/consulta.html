@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Consultar inscrição · RECONNECT</title>
+<meta name="description" content="Consulte a situação da sua inscrição no retiro RECONNECT pelo protocolo ou CPF.">
+<meta name="theme-color" content="#ffb627">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%23ffb627'/%3E%3Cpath d='M32 10v44M14 26h36' stroke='%2312305c' stroke-width='9'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wght@400;500;600;800&display=swap" rel="stylesheet">
+<style>
+:root{--y:#ffb627;--o:#f0522a;--n:#12305c;--k:#0a1f40;--c:#fbf6ec;--leaf:#2f8f6b;--red:#c4300f;
+  --disp:'Anton','Archivo',Impact,sans-serif;--txt:'Archivo',system-ui,sans-serif}
+*{box-sizing:border-box;margin:0}
+[hidden]{display:none!important}
+html{overflow-x:clip}
+body{font:400 17px/1.55 var(--txt);color:var(--k);background:var(--c);min-height:100vh;-webkit-text-size-adjust:100%;
+  background-image:radial-gradient(rgba(10,31,64,.14) 1.4px,transparent 1.9px);background-size:16px 16px}
+button,input{font:inherit;color:inherit}
+a{color:inherit}
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px clamp(14px,4vw,40px);background:var(--y);border-bottom:3px solid var(--k)}
+.brand{display:flex;align-items:center;gap:10px;font:400 1.5rem/1 var(--disp);letter-spacing:.03em;text-decoration:none}
+.brand img{height:40px;width:auto}.brand b{font-weight:400;color:var(--o)}
+.back{font:800 .78rem var(--txt);text-transform:uppercase;letter-spacing:.06em;text-decoration:none;padding:9px 16px;background:var(--k);color:var(--y);border-radius:999px}
+.wrap{width:min(680px,100% - 32px);margin:36px auto 70px}
+.tag{display:inline-block;border:2px solid currentColor;padding:5px 12px;margin-bottom:14px;font:800 .75rem var(--txt);text-transform:uppercase;letter-spacing:.08em}
+h1{font:400 clamp(2.4rem,9vw,4rem)/.98 var(--disp);text-transform:uppercase;color:var(--n);margin-bottom:12px}
+.lead{font-weight:500;margin-bottom:22px;max-width:560px}
+.box{background:#fff;border:3px solid var(--k);box-shadow:8px 8px 0 var(--k);padding:20px}
+label{display:block;font:800 .72rem var(--txt);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px}
+input{width:100%;min-height:52px;padding:10px 14px;border:3px solid var(--k);border-radius:8px;background:#fff;font-size:17px;letter-spacing:.02em}
+input:focus{outline:0;box-shadow:4px 4px 0 var(--o)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:50px;padding:12px 22px;margin-top:14px;width:100%;border:3px solid var(--k);border-radius:10px;background:var(--k);color:var(--y);font:800 .9rem var(--txt);text-transform:uppercase;letter-spacing:.05em;box-shadow:5px 5px 0 var(--o);cursor:pointer;transition:transform .12s,box-shadow .12s;text-decoration:none}
+.btn:hover{transform:translate(3px,3px);box-shadow:2px 2px 0 var(--o)}
+.btn:disabled{opacity:.6;cursor:wait}
+.hint{margin-top:10px;font-size:.85rem;color:#44546e;font-weight:500}
+.msg{margin-top:14px;font-weight:800;color:var(--red);min-height:1.2em}
+.result{margin-top:26px;animation:up .4s}
+@keyframes up{from{opacity:0;transform:translateY(12px)}}
+.banner{padding:16px 18px;border:3px solid var(--k);box-shadow:6px 6px 0 var(--k);display:flex;gap:14px;align-items:center}
+.banner .ic{flex:none;width:52px;height:52px;display:grid;place-items:center;border:3px solid var(--k);background:#fff;font:400 1.8rem var(--disp)}
+.banner h2{font:400 1.7rem/1.05 var(--disp);text-transform:uppercase}
+.banner p{font-weight:600;font-size:.92rem;margin-top:2px}
+.banner.confirmada{background:var(--leaf);color:#fff}
+.banner.pre-cadastro{background:var(--y)}
+.banner.cancelada{background:var(--o)}
+.info{margin-top:18px;background:#fff;border:3px solid var(--k);padding:14px 16px}
+.row{display:flex;justify-content:space-between;gap:12px;padding:6px 0;border-bottom:1.5px solid #e7dfcb;font-weight:600}
+.row:last-child{border-bottom:0}
+.row span:first-child{color:#44546e;font-weight:700;font-size:.85rem;text-transform:uppercase;letter-spacing:.05em}
+.proto{font:400 1.5rem/1 var(--disp);letter-spacing:.06em;color:var(--o)}
+.people{list-style:none;padding:0;margin-top:14px;display:grid;gap:8px}
+.people li{padding:10px 12px;background:#fff;border:3px solid var(--k);display:flex;flex-wrap:wrap;gap:4px 10px;align-items:center;font-weight:800}
+.people li.me{background:#fff3d1;box-shadow:4px 4px 0 var(--k)}
+.people small{width:100%;font-weight:500;color:#44546e}
+.pill{padding:0 8px;border:2px solid var(--k);font:800 .62rem/1.6 var(--txt);text-transform:uppercase;letter-spacing:.05em;background:var(--c)}
+.pay{margin-top:18px;padding:14px 16px;background:#fff3d1;border:3px solid var(--k)}
+.pay b{font-weight:800}
+.contacts{display:grid;gap:10px;margin-top:10px}
+.contact{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 12px;background:#fff;border:3px solid var(--k)}
+.contact a{font:800 .75rem var(--txt);text-transform:uppercase;letter-spacing:.05em;padding:8px 14px;background:var(--k);color:var(--y);text-decoration:none}
+</style>
+</head>
+<body>
+<header class="top">
+  <a class="brand" href="/"><img src="/img/logo-conecta-azul.png" alt="" onerror="this.remove()"><span>RE<b>CONNECT</b></span></a>
+  <a class="back" href="/">← Voltar ao site</a>
+</header>
+
+<main class="wrap">
+  <p class="tag">Minha inscrição</p>
+  <h1>Consultar inscrição</h1>
+  <p class="lead">Digite o <b>protocolo</b> que você recebeu ao se cadastrar ou o <b>CPF</b> do participante para ver a situação da inscrição.</p>
+
+  <form class="box" id="form" autocomplete="off">
+    <label for="q">Protocolo ou CPF</label>
+    <input id="q" name="q" placeholder="Ex.: RC-1A2B3C ou 000.000.000-00" autocapitalize="characters" autocorrect="off" spellcheck="false" enterkeyhint="search">
+    <button class="btn" type="submit" id="go">Consultar</button>
+    <p class="hint">Por segurança, mostramos apenas nomes abreviados e parte do CPF.</p>
+    <p class="msg" id="msg" role="alert"></p>
+  </form>
+
+  <section class="result" id="result" hidden aria-live="polite"></section>
+</main>
+
+<script>
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const brl = n => Number(n || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+const LODGE = { camping: '⛺ Camping', dormitorio: '🛏 Dormitório' };
+const ST = {
+  confirmada: ['✓', 'Inscrição confirmada', 'Pagamento recebido. Apresente o protocolo ou o CPF na entrada.'],
+  'pre-cadastro': ['⏳', 'Pré-cadastro recebido', 'Aguardando pagamento. A inscrição só é confirmada depois do pagamento.'],
+  cancelada: ['✕', 'Inscrição cancelada', 'Esta inscrição foi cancelada. Fale com a organização se precisar.']
+};
+let contacts = [];
+fetch('/api/config').then(r => r.json()).then(c => contacts = c.contacts || []).catch(() => {});
+
+// Máscara automática: CPF quando for só números, protocolo quando começar com RC
+$('#q').addEventListener('input', e => {
+  let v = e.target.value;
+  if (/^[\d.\-\s]*$/.test(v)) e.target.value = v.replace(/\D/g, '').slice(0, 11).replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+  else e.target.value = v.toUpperCase();
+});
+
+$('#form').addEventListener('submit', async e => {
+  e.preventDefault();
+  const q = $('#q').value.trim(), msg = $('#msg'), out = $('#result');
+  msg.textContent = ''; out.hidden = true;
+  if (!q) { msg.textContent = 'Digite o protocolo ou o CPF.'; return; }
+  $('#go').disabled = true; $('#go').textContent = 'Consultando...';
+  try {
+    const r = await fetch('/api/lookup', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ q }) });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) { msg.textContent = j.error || 'Não foi possível consultar.'; }
+    else show(j);
+  } catch { msg.textContent = 'Sem conexão. Tente novamente.'; }
+  $('#go').disabled = false; $('#go').textContent = 'Consultar';
+});
+
+function show(j) {
+  const [ic, title, sub] = ST[j.status] || ST['pre-cadastro'];
+  const how = j.method === 'pix' ? 'Pix (à vista)' : j.method === 'crediario' ? `Crediário ${j.installments}x (mensal)` : `Cartão ${j.installments}x`;
+  const pending = j.status === 'pre-cadastro';
+  const out = $('#result');
+  out.innerHTML = `
+    <div class="banner ${j.status}"><div class="ic">${ic}</div><div><h2>${title}</h2><p>${sub}</p></div></div>
+    <div class="info">
+      <div class="row"><span>Protocolo</span><span class="proto">${esc(j.protocol)}</span></div>
+      <div class="row"><span>Cadastrado em</span><span>${new Date(j.createdAt).toLocaleDateString('pt-BR')}</span></div>
+      <div class="row"><span>Valor</span><span>${brl(j.total)} · ${how}</span></div>
+      ${j.plan ? `<div class="row"><span>Parcelas</span><span>${j.plan.paid} de ${j.plan.total} pagas${j.plan.next ? ' · próxima ' + j.plan.next.split('-').reverse().join('/') + ' (' + brl(j.plan.amount) + ')' : ' · quitado'}</span></div>` : ''}
+    </div>
+    <ul class="people">${j.participants.map(p => `<li class="${p.matched ? 'me' : ''}">${esc(p.name)} <span class="pill">${LODGE[p.lodging] || ''}</span><span class="pill">${esc(p.district)}</span><small>CPF ${esc(p.cpf)}${p.matched ? ' · participante consultado' : ''}</small></li>`).join('')}</ul>
+    ${pending && contacts.length ? `<div class="pay"><b>Como pagar:</b> entre em contato com uma das pessoas abaixo e informe o protocolo <b>${esc(j.protocol)}</b>.
+      <div class="contacts">${contacts.map(c => `<div class="contact"><span><b>${esc(c.name)}</b>${c.role ? ' · ' + esc(c.role) : ''}<br><small>${esc(c.district)}</small></span><a href="https://wa.me/${esc(c.whatsapp)}?text=${encodeURIComponent('Olá! Quero combinar o pagamento da inscrição no RECONNECT. Protocolo: ' + j.protocol)}" target="_blank" rel="noopener">WhatsApp</a></div>`).join('')}</div></div>` : ''}`;
+  out.hidden = false; out.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+</script>
+</body>
+</html>

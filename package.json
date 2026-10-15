@@ -1,0 +1,10 @@
+{
+  "name": "retiro-reconnect",
+  "version": "1.0.0",
+  "description": "Portal do Retiro de Jovens RECONNECT (06 a 09/02/2027)",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": { "node": ">=18" }
+}

@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Autorização de menor · RECONNECT</title>
+<meta name="robots" content="noindex">
+<style>
+:root{--k:#0a1f40;--y:#ffb627}
+*{box-sizing:border-box}
+body{margin:0;background:#e9e4d6;color:#111;font:15px/1.55 Georgia,'Times New Roman',serif}
+.bar{position:sticky;top:0;z-index:5;display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;padding:10px 16px;background:var(--y);border-bottom:3px solid var(--k);font:700 14px system-ui,sans-serif;color:var(--k)}
+.bar button,.bar a{font:800 13px system-ui,sans-serif;text-transform:uppercase;letter-spacing:.05em;padding:10px 16px;border:3px solid var(--k);background:var(--k);color:var(--y);cursor:pointer;text-decoration:none;border-radius:8px}
+.bar a{background:#fff;color:var(--k)}
+.doc{width:min(210mm,100%);min-height:297mm;margin:18px auto;padding:18mm 18mm 14mm;background:#fff;box-shadow:0 4px 18px rgba(0,0,0,.18)}
+h1{margin:0 0 4px;font:700 19px/1.25 Georgia,serif;text-align:center;text-transform:uppercase;letter-spacing:.03em}
+.sub{text-align:center;margin:0 0 14px;font-size:13.5px}
+.proto{text-align:right;font:700 13px system-ui,sans-serif;margin-bottom:10px}
+p{margin:0 0 10px;text-align:justify}
+.ln{display:inline-block;min-width:120px;border-bottom:1px solid #000;padding:0 4px;line-height:1.2;font-weight:700}
+.ln.w{min-width:260px}.ln.s{min-width:70px}.ln.m{min-width:170px}
+.box{display:inline-block;width:12px;height:12px;border:1.5px solid #000;vertical-align:-1px;margin:0 3px 0 8px}
+.sign{margin-top:34px;display:grid;grid-template-columns:1fr 1fr;gap:30px}
+.sign div{border-top:1px solid #000;padding-top:4px;text-align:center;font-size:13px}
+.note{margin-top:18px;padding:8px 10px;border:1.5px solid #000;font:13px/1.45 system-ui,sans-serif}
+.note b{text-transform:uppercase}
+@media print{
+  body{background:#fff}.bar{display:none}
+  .doc{margin:0;box-shadow:none;width:auto;min-height:0;padding:14mm 16mm;page-break-after:always}
+  .doc:last-child{page-break-after:auto}
+  @page{size:A4;margin:0}
+}
+</style>
+</head>
+<body>
+<div class="bar"><span>Autorização de menor de idade · imprima, assine e leve no dia do retiro</span><span><a href="/">← Voltar ao site</a> <button type="button" onclick="window.print()">Imprimir / Salvar PDF</button></span></div>
+<main id="docs"></main>
+<script>
+const q = new URLSearchParams(location.search);
+const esc = s => String(s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const protocolo = esc(q.get('protocolo')), menores = (q.get('menores') || '').split('|').map(s => s.trim()).filter(Boolean);
+const lista = menores.length ? menores : [''];          // sem dados: uma via em branco
+const blank = (cls = '', v = '') => `<span class="ln ${cls}">${esc(v) || '&nbsp;'}</span>`;
+document.getElementById('docs').innerHTML = lista.map(nome => `
+<article class="doc">
+  <h1>Autorização para participação de menor de idade</h1>
+  <p class="sub">Retiro de Jovens <b>RECONNECT</b> · 05 a 09 de fevereiro de 2027<br>Chácara Quinta dos Pinheiros</p>
+  <div class="proto">Protocolo da inscrição: ${blank('s', protocolo)}</div>
+
+  <p>Eu, ${blank('w')}, portador(a) do RG nº ${blank('m')} e CPF nº ${blank('m')}, telefone ${blank('m')}, na qualidade de ( ) pai ( ) mãe ( ) responsável legal (${blank('m')}), <b>AUTORIZO</b> a participação do(a) menor ${blank('w', nome)}, nascido(a) em ${blank('s')}/${blank('s')}/${blank('s')}, documento nº ${blank('m')}, no <b>Retiro de Jovens RECONNECT</b>, que será realizado de <b>05 a 09 de fevereiro de 2027</b>, na <b>Chácara Quinta dos Pinheiros</b>.</p>
+
+  <p>Declaro que o(a) menor estará sob os cuidados e o acompanhamento do(a) adulto(a) ${blank('w')}, documento nº ${blank('m')}, telefone ${blank('m')}, durante o evento, e que estou ciente da programação e das regras do retiro.</p>
+
+  <p>Declaro que as informações de saúde do(a) menor (alergias, restrições alimentares, medicamentos de uso controlado e necessidades de acessibilidade) são verdadeiras e foram informadas à organização. Em caso de necessidade ou emergência, autorizo o encaminhamento do(a) menor a atendimento médico, e a organização poderá entrar em contato comigo ou com o contato de emergência: ${blank('w')}, telefone ${blank('m')}.</p>
+
+  <p>Uso de imagem (fotos e vídeos do evento, para divulgação pelo ministério): <span class="box"></span> autorizo <span class="box"></span> não autorizo.</p>
+
+  <p>Local e data: ${blank('m')}, ${blank('s')} de ${blank('m')} de ${blank('s')}.</p>
+
+  <div class="sign"><div>Assinatura do responsável legal</div><div>Nome legível do responsável legal</div></div>
+
+  <div class="note"><b>Importante:</b> este documento deve ser impresso, preenchido e assinado pelo responsável legal, e <b>apresentado na chegada ao retiro</b>, junto com a cópia de um documento com foto do responsável. Sem a autorização, a entrada do menor desacompanhado do responsável legal poderá não ser liberada.</div>
+</article>`).join('');
+</script>
+</body>
+</html>
