@@ -59,7 +59,7 @@ window.CONTENT = {
   // Novidades (a mais recente primeiro)
   news: [
     { date: '2026-10-15', tag: 'Anúncio', title: 'O RECONNECT vem aí!', text: 'Está marcado: de 05 a 09 de fevereiro de 2027 vamos viver o retiro de jovens RECONNECT. A abertura será na sexta, 05/02, às 19h30. Reserve a data.' },
-    { date: '2026-10-15', tag: 'Inscrições', title: 'Inscrições abertas em breve', text: 'Estamos finalizando os detalhes. O formulário será liberado neste site em breve.' },
+    { date: '2026-10-19', tag: 'Inscrições', title: 'Inscrições abertas!', text: 'Já dá para fazer o pré-cadastro aqui no site. A inscrição é confirmada após o pagamento, combinado com a liderança do seu distrito.' },
     { date: '2026-10-15', tag: 'Line-up', title: 'Line-up em breve', text: 'Ministradores e bandas serão revelados nas próximas semanas.' }
   ],
 
