@@ -399,7 +399,7 @@ function personBlock(p, i, hit) {
 function payBlock(r) {
   const pay = r.payment, pl = pay.plan;
   const kv = `<dl class="kv"><dt>Forma</dt><dd>${methodLabel(pay)}${pay.method === 'crediario' ? ' (uma parcela por mês)' : ''}</dd>
-    <dt>Subtotal</dt><dd>${brl(pay.subtotal)}</dd>${pay.discount ? `<dt>Desconto</dt><dd>${brl(pay.discount)}${pay.combo ? ' (combo familiar)' : ' (à vista)'}</dd>` : ''}${pay.feePercent ? `<dt>Taxa</dt><dd>${String(pay.feePercent).replace('.', ',')}%</dd>` : ''}
+    <dt>Subtotal</dt><dd>${brl(pay.subtotal)}</dd>${pay.discount ? `<dt>Desconto</dt><dd>${brl(pay.discount)}${pay.combo ? ' (combo familiar)' : ' (à vista)'}</dd>` : ''}${pay.feePercent ? `<dt>Taxa</dt><dd>${Number(pay.feePercent).toFixed(2).replace('.', ',')}%</dd>` : ''}
     ${pay.method === 'cartao' ? `<dt>Taxa da maquininha</dt><dd>${brl(feeAmount(pay))} <small>(fica com a empresa da maquininha)</small></dd>` : ''}<dt>Total cobrado</dt><dd><b>${brl(pay.total)}</b></dd>${pay.method === 'cartao' ? `<dt>Líquido da organização</dt><dd><b>${brl(pay.subtotal)}</b></dd>` : ''}<dt>Pago</dt><dd>${pl ? pl.filter(x => x.paid).length + ' de ' + pl.length + ' parcelas' : (r.status === 'confirmada' ? 'Sim' : 'Não')}</dd></dl>`;
   if (!pl) return kv;
   return kv + `<div class="sec-t" style="margin-top:14px">Parcelas</div><div class="inst">${pl.map(x => {

@@ -25,6 +25,13 @@
     const d = participants[0] && participants[0].district;       // vale o "Convidado por" do responsável
     return !!d && (cfg.cardDistricts || []).includes(d);
   };
+  // Parcelas liberadas no cartão: lista em cfg.cardInstallments (só as que têm taxa conhecida) ou 2..max.
+  const cardOptions = cfg => {
+    if (Array.isArray(cfg.cardInstallments) && cfg.cardInstallments.length) return cfg.cardInstallments.slice().sort((a, b) => a - b);
+    const max = cfg.maxInstallments || 12, out = [];
+    for (let i = 2; i <= max; i++) out.push(i);
+    return out;
+  };
   const limits = (method, cfg) => method === 'crediario'
     ? { min: 2, max: (cfg.crediario && cfg.crediario.maxInstallments) || 3 }
     : method === 'cartao' ? { min: 2, max: cfg.maxInstallments || 12 } : { min: 1, max: 1 };
@@ -33,7 +40,8 @@
   function compute(participants, payment, cfg) {
     const method = ['pix', 'crediario', 'cartao'].includes(payment.method) ? payment.method : 'pix';
     const lim = limits(method, cfg);
-    const n = method === 'pix' ? 1 : Math.min(Math.max(parseInt(payment.installments, 10) || lim.min, lim.min), lim.max);
+    let n = method === 'pix' ? 1 : Math.min(Math.max(parseInt(payment.installments, 10) || lim.min, lim.min), lim.max);
+    if (method === 'cartao') { const o = cardOptions(cfg); if (!o.includes(n)) n = o.reduce((a, b) => (Math.abs(b - n) < Math.abs(a - n) ? b : a), o[0]); }
     const payers = participants.filter(p => p.age >= 5).length;            // quem paga (inclui meia)
     const minPeople = (cfg.combo && cfg.combo.minParticipants) || 3;
     const comboOk = !!payment.combo && participants.length >= minPeople;     // combo familiar
@@ -44,7 +52,7 @@
     const listTotal = r2(lines.reduce((s, l) => s + l.full, 0));
     const subtotal = r2(lines.reduce((s, l) => s + l.price, 0));
     const fee = method === 'cartao' ? Number(cfg.installmentFees && cfg.installmentFees[String(n)]) || 0 : 0;
-    const total = r2(subtotal * (1 + fee / 100));
+    const total = r2(fee > 0 ? subtotal / (1 - fee / 100) : subtotal);   // por dentro: a taxa da maquininha sai do total e a organização fica com o subtotal
     return { method, installments: n, payers, comboOk, minPeople, avista, discounted, lines, listTotal, subtotal, discount: r2(listTotal - subtotal), fee, total, min: lim.min, max: lim.max };
   }
 
@@ -57,7 +65,9 @@
       return { error: 'O parcelamento no cartão está disponível apenas para inscrições convidadas por: ' + (cfg.cardDistricts || []).join(', ') + '.' };
     if (payment.method !== 'pix') {
       const lim = limits(payment.method, cfg), n = parseInt(payment.installments, 10);
-      if (!(n >= lim.min && n <= lim.max)) return { error: 'Número de parcelas inválido (de ' + lim.min + ' a ' + lim.max + ').' };
+      if (payment.method === 'cartao') {
+        if (!cardOptions(cfg).includes(n)) return { error: 'Parcelas disponíveis no cartão: ' + cardOptions(cfg).map(x => x + 'x').join(', ') + '.' };
+      } else if (!(n >= lim.min && n <= lim.max)) return { error: 'Número de parcelas inválido (de ' + lim.min + ' a ' + lim.max + ').' };
     }
     const calc = compute(participants, payment, cfg);
     if (calc.payers < 1) return { error: 'É preciso ao menos um participante com 5 anos ou mais (crianças de 0 a 4 anos são gratuitas).' };
@@ -134,5 +144,5 @@
     return { value: { emergency: { name, phone, relation }, imageConsent: info.imageConsent === true, minors: { any: anyMinor, accompanied, authorizationRequired: required, authorizationAck: ack } } };
   }
 
-  return { compute, quote, plan, syncPlan, planInfo, checkInfo, checkHealth, band, crediarioOpen, cardAllowed };
+  return { compute, quote, plan, syncPlan, planInfo, checkInfo, checkHealth, cardOptions, band, crediarioOpen, cardAllowed };
 });

@@ -187,10 +187,10 @@
     $('#instWrap').hidden = m === 'pix';
     if (m === 'pix' || filledFor === m) return;
     filledFor = m;
-    const min = 2, max = m === 'crediario' ? credMax : maxInst, keep = +installments.value;
+    const opts = m === 'crediario' ? Array.from({ length: credMax - 1 }, (_, i) => i + 2) : Pricing.cardOptions(cfg), keep = +installments.value;
     installments.innerHTML = '';
-    for (let i = min; i <= max; i++) installments.add(new Option(i + 'x', i));
-    installments.value = keep >= min && keep <= max ? keep : (m === 'crediario' ? max : min);
+    opts.forEach(i => installments.add(new Option(i + 'x', i)));
+    installments.value = opts.includes(keep) ? keep : (m === 'crediario' ? opts[opts.length - 1] : opts[0]);
   }
 
   function totals() {
@@ -221,7 +221,7 @@
     const tip = !calc.discounted && payers > 0 ? `<div class="hint-row">Dica: pagando à vista no Pix você ganha 10% de desconto.</div>` : '';
     $('#summary').innerHTML = `<b>Resumo da inscrição</b>${rows}` +
       (calc.discount > 0 ? `<div class="row disc"><span>${why}</span><span>−${brl(calc.discount)}</span></div>` : '') +
-      (calc.fee > 0 ? `<div class="row"><span>Acréscimo da maquininha (${String(calc.fee).replace('.', ',')}%)</span><span>${brl(calc.total - calc.subtotal)}</span></div>` : '') +
+      (calc.fee > 0 ? `<div class="row"><span>Acréscimo da maquininha (${calc.fee.toFixed(2).replace('.', ',')}%)</span><span>${brl(calc.total - calc.subtotal)}</span></div>` : '') +
       `<div class="row total"><span>Total</span><span>${m === 'pix' ? brl(calc.total) : `${n}x de ${brl(calc.total / n)}${m === 'crediario' ? ' / mês' : ''}`}</span></div>` + tip;
   }
   form.addEventListener('change', summary);
