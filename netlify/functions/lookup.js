@@ -1,4 +1,5 @@
 const { json, parseBody, sb, loadPricing } = require('./_shared');
+const ip = require('./_infinitepay');
 
 const short = n => { const w = n.trim().split(/\s+/); return w.length > 1 ? w[0] + ' ' + w[w.length - 1][0] + '.' : w[0]; };
 const mask = c => (c ? '•••.•••.•••-' + c.slice(-2) : 'sem CPF');
@@ -24,6 +25,7 @@ exports.handler = async event => {
     if (!reg) return json(404, { found: false, error: 'Nenhuma inscrição encontrada. Confira o protocolo ou o CPF.' });
     return json(200, {
       found: true, protocol: reg.protocol, status: reg.status, createdAt: reg.created_at,
+      payable: ip.enabled() && reg.payment.method === 'cartao' && !reg.payment.paid && reg.status === 'pre-cadastro',
       total: reg.payment.total, method: reg.payment.method, installments: reg.payment.installments, plan: loadPricing().planInfo(reg.payment),
       participants: reg.participants.map(p => ({ name: short(p.name), lodging: p.lodging, district: p.district, cpf: mask(p.cpf), matched: cpf ? p.cpf === cpf : false }))
     });

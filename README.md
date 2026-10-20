@@ -34,6 +34,9 @@ Abra `https://SEU-SITE.netlify.app/admin` e entre com e-mail e senha. Lá você 
 4. Faça commit/push: o Netlify publica sozinho.
 (Alternativa rápida: variável `REGISTRATION_OPEN=true` no Netlify + novo deploy.)
 
+## Cartão dentro do site (InfinitePay)
+Com a variável `INFINITEPAY_HANDLE` (sua InfiniteTag, sem $) no Netlify, quem escolhe cartão vê o botão **Pagar com cartão** (na tela final e na consulta). O cliente paga na página da InfinitePay e escolhe as parcelas lá; a InfinitePay avisa `/api/infinitepay-webhook`, o site confere o pagamento na API (`payment_check`) e marca a inscrição como **confirmada**. O valor enviado é o preço-base; a taxa do parcelamento é somada pela InfinitePay. Sem a variável, tudo segue pelo WhatsApp do distrito.
+
 ## Conteúdo (sem mexer em código): `public/js/content.js`
 Programação, line-up, local (nome, endereço, link do mapa, fotos), novidades, 6 fotos do retiro e `photosLink` (link do álbum completo).
 

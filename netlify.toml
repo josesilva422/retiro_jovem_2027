@@ -21,6 +21,16 @@
   status = 200
 
 [[redirects]]
+  from = "/api/pay"
+  to = "/.netlify/functions/pay"
+  status = 200
+
+[[redirects]]
+  from = "/api/infinitepay-webhook"
+  to = "/.netlify/functions/infinitepay-webhook"
+  status = 200
+
+[[redirects]]
   from = "/consulta"
   to = "/consulta.html"
   status = 200

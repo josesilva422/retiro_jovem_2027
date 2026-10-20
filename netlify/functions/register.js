@@ -1,5 +1,6 @@
 const crypto = require('crypto');
 const { loadConfig, loadPricing, json, parseBody, sb, validatePerson } = require('./_shared');
+const ip = require('./_infinitepay');
 
 exports.handler = async event => {
   if (event.httpMethod !== 'POST') return json(405, { error: 'Método não permitido.' });
@@ -47,7 +48,13 @@ exports.handler = async event => {
     for (let tries = 0; tries < 3; tries++) {
       protocol = 'RC-' + crypto.randomBytes(3).toString('hex').toUpperCase();
       const ins = await sb('registrations', { method: 'POST', prefer: 'return=minimal', body: { protocol, status: 'pre-cadastro', participants, cpfs, payment, info: inf.value } });
-      if (ins.ok) return json(201, { ok: true, protocol, total: calc.total, installments: calc.installments, method: calc.method, combo: calc.comboOk, plan: payment.plan || null, authorization: inf.value.minors.authorizationRequired, status: 'pre-cadastro' });
+      if (ins.ok) {
+        let payUrl = null;
+        if (calc.method === 'cartao' && ip.enabled()) {
+          try { payUrl = (await ip.ensureLink(protocol)).url || null; } catch (e) { console.error('register: link do cartão:', e.message); }
+        }
+        return json(201, { ok: true, payUrl, protocol, total: calc.total, installments: calc.installments, method: calc.method, combo: calc.comboOk, plan: payment.plan || null, authorization: inf.value.minors.authorizationRequired, status: 'pre-cadastro' });
+      }
       if (ins.status !== 409) throw new Error('db');
     }
     throw new Error('db');
