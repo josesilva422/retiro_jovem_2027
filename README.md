@@ -29,7 +29,7 @@ Abra `https://SEU-SITE.netlify.app/admin` e entre com e-mail e senha. Lá você 
 
 ## Para abrir as inscrições
 1. `config.json`: `"registrationOpen": true`
-2. Preços em `prices` (valor cheio) e `discountPrices` (valor à vista / combo familiar, 10%); faixa etária: 0–4 anos grátis, 5–9 meia, 10+ integral (regras em `public/js/pricing.js`). Preencha também `pix.key`, `pix.holder`, `contactWhatsapp` e a lista `districts` (se vazia, o distrito vira campo de texto).
+2. Preços em `prices` (valor cheio) e `discountPrices` (valor à vista / combo familiar, 10%); faixa etária: 0–4 anos grátis, 5–9 meia, 10+ integral (regras em `public/js/pricing.js`). Os contatos e a chave Pix de cada distrito ficam em `contacts` (usados no pagamento e no rodapé "Dúvidas"); preencha também a lista `districts` (se vazia, o distrito vira campo de texto).
 3. Pagamento (regras em `public/js/pricing.js`): **Pix** à vista (-10%); **crediário** 2x/3x, uma parcela por mês, controlado no painel (`crediario.until` = última data para escolher essa opção, ex.: `"2026-12-31"`; vazio = sem limite; `crediario.enabled`); **cartão** (InfinitePay, taxa repassada ao cliente): total = preço ÷ (1 − taxa), então a organização recebe o preço cheio e a taxa fica com a maquininha. `installmentFees` guarda a taxa de cada parcela e `cardInstallments` lista as parcelas liberadas (hoje 2x, 3x, 4x, 7x, 9x e 12x; para liberar outras, informe o valor da InfinitePay e inclua a taxa). Só para os distritos de `cardDistricts` (Veiga Jardim).
 4. Faça commit/push: o Netlify publica sozinho.
 (Alternativa rápida: variável `REGISTRATION_OPEN=true` no Netlify + novo deploy.)

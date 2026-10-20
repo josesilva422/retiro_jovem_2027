@@ -238,7 +238,7 @@
   form.querySelectorAll('input,select,button').forEach(el => { if (!open) el.disabled = true; });
   if (open) { const s = $('#stickyCta'); if (s) s.textContent = 'Fazer minha inscrição'; }
   if (open) $('#regLead').textContent = 'Preencha os dados abaixo. Você pode adicionar outros participantes na mesma inscrição.';
-  if (cfg.contactWhatsapp) $('#footContact').innerHTML = `Dúvidas: <a href="https://wa.me/55${cfg.contactWhatsapp.replace(/\D/g, '')}" target="_blank" rel="noopener">WhatsApp da organização</a>`;
+  if (contacts.length) $('#footContact').innerHTML = 'Dúvidas? Fale com o responsável pelo seu distrito: ' + contacts.map(c => `<a href="https://wa.me/${esc(c.whatsapp)}" target="_blank" rel="noopener"><b>${esc(c.district)}</b> · ${esc(c.name)} (${esc(c.display)})</a>`).join(' &nbsp;|&nbsp; ');
 
   // Lista de espera (hero + seção de inscrição)
   document.querySelectorAll('.wait-form').forEach(wf => {
