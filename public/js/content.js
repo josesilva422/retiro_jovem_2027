@@ -64,7 +64,7 @@ window.CONTENT = {
   ],
 
   // Link do álbum com todas as fotos (Drive, Google Fotos etc.). Deixe vazio até ter o link.
-  photosLink: '',
+  photosLink: 'https://drive.google.com/drive/folders/1MLsy3EPm7GyhNS4RmfICE7T6kf0BZusn?usp=drive_link',
 
   // 6 fotos de destaque do retiro (preencher depois do evento).
   // Ex.: { src: '/img/retiro/foto1.jpg', alt: 'Louvor' }
