@@ -111,6 +111,11 @@ async function handleApi(req, res, url) {
   const cfg = loadConfig();
   const ip = req.socket.remoteAddress;
 
+  const takenSpots = () => readJson(REG_FILE).filter(r => r.status !== 'cancelada').reduce((s, r) => s + r.participants.length, 0);
+  if (req.method === 'GET' && url.pathname === '/api/vagas') {
+    const cap = cfg.capacity || {}, total = cap.total || 0, taken = takenSpots();
+    return send(res, 200, { total, taken, remaining: total ? Math.max(total - taken, 0) : null, warnAt: cap.warnAt || 20 });
+  }
   if (req.method === 'GET' && url.pathname === '/api/config') {
     const { pix, ...pub } = cfg;
     return send(res, 200, { ...pub, pixKey: cfg.pix.key, pixHolder: cfg.pix.holder });
@@ -144,6 +149,12 @@ async function handleApi(req, res, url) {
     const cpfs = participants.map(p => p.cpf).filter(Boolean);
     if (new Set(cpfs).size !== cpfs.length) return send(res, 400, { error: 'Há CPFs repetidos na inscrição.' });
 
+    const capTotal = (cfg.capacity && cfg.capacity.total) || 0;
+    if (capTotal) {
+      const left = capTotal - takenSpots();
+      if (left <= 0) return send(res, 409, { error: 'As vagas do retiro esgotaram. Fale com o responsável do seu distrito.' });
+      if (participants.length > left) return send(res, 409, { error: 'Restam apenas ' + left + ' vaga' + (left > 1 ? 's' : '') + '. Reduza o número de participantes ou fale com o responsável do seu distrito.' });
+    }
     const regs = readJson(REG_FILE);
     const taken = new Set(regs.filter(r => r.status !== 'cancelada').flatMap(r => r.participants.map(p => p.cpf)));
     const dup = participants.find(p => p.cpf && taken.has(p.cpf));

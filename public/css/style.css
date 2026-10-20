@@ -456,3 +456,14 @@ input:disabled{background:#ece6d6;cursor:not-allowed}
 
 .paynow{width:100%;margin:12px 0 4px;font-size:.9rem}
 .paynow-s{display:block;margin-bottom:12px;font-weight:600}
+
+.vagas-box{position:relative;overflow:hidden;margin:14px 0;padding:16px 18px;background:var(--o);color:#fff;border:4px solid var(--k);box-shadow:6px 6px 0 var(--k);text-align:center;animation:vgpulse 1.6s ease-in-out infinite}
+.vagas-box b{display:block;font:400 clamp(1.8rem,7vw,2.8rem)/1 var(--disp);text-transform:uppercase;letter-spacing:.02em}
+.vagas-box span{display:block;margin-top:6px;font-weight:700}
+.vagas-box i{position:absolute;left:0;bottom:0;height:6px;background:var(--y)}
+.vagas-box.out{background:var(--k);animation:none}
+.vagas-float{position:fixed;left:50%;bottom:14px;transform:translateX(-50%);z-index:80;padding:12px 18px;background:var(--o);color:#fff;border:3px solid var(--k);box-shadow:4px 4px 0 var(--k);font:800 .8rem var(--txt);text-transform:uppercase;letter-spacing:.04em;text-decoration:none;white-space:nowrap;animation:vgpulse 1.6s ease-in-out infinite}
+@keyframes vgpulse{0%,100%{transform:scale(1)}50%{transform:scale(1.03)}}
+.vagas-float{animation-name:vgfloat}
+@keyframes vgfloat{0%,100%{transform:translateX(-50%) scale(1)}50%{transform:translateX(-50%) scale(1.05)}}
+@media (prefers-reduced-motion:reduce){.vagas-box,.vagas-float{animation:none}}

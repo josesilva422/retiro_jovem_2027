@@ -31,6 +31,16 @@ exports.handler = async event => {
     if (q.error) return json(400, { error: q.error });
     const { calc } = q;
 
+    // Limite de vagas
+    const total = (cfg.capacity && cfg.capacity.total) || 0;
+    if (total) {
+      const occ = await sb('registrations?select=participants&status=neq.cancelada');
+      if (!occ.ok) throw new Error('db');
+      const left = total - occ.data.reduce((s, x) => s + x.participants.length, 0);
+      if (left <= 0) return json(409, { error: 'As vagas do retiro esgotaram. Fale com o responsável do seu distrito.' });
+      if (participants.length > left) return json(409, { error: `Restam apenas ${left} vaga${left > 1 ? 's' : ''}. Reduza o número de participantes ou fale com o responsável do seu distrito.` });
+    }
+
     // CPF já inscrito (ignora inscrições canceladas)
     const dup = await sb(`registrations?select=participants&status=neq.cancelada&cpfs=ov.{${cpfs.join(',')}}`);
     if (!dup.ok) throw new Error('db');

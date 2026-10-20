@@ -350,3 +350,19 @@
     setTimeout(close, 5200);   // sobe (2,6s), fica um pouco e desce
   }
 })();
+
+// ---------- Aviso de últimas vagas ----------
+(() => {
+  fetch('/api/vagas').then(r => r.json()).then(v => {
+    if (!v || !v.total || v.remaining == null || v.remaining > (v.warnAt || 20)) return;
+    const box = document.getElementById('vagasBox'), fl = document.getElementById('vagasFloat');
+    const out = v.remaining <= 0;
+    const txt = out ? 'VAGAS ESGOTADAS' : v.remaining === 1 ? 'ÚLTIMA VAGA!' : 'ÚLTIMAS ' + v.remaining + ' VAGAS!';
+    if (box) {
+      box.className = 'vagas-box on' + (out ? ' out' : '');
+      box.innerHTML = '<b>' + txt + '</b><span>' + (out ? 'Todas as ' + v.total + ' vagas foram preenchidas. Fale com o responsável do seu distrito.' : 'Restam apenas ' + v.remaining + ' de ' + v.total + ' vagas. Garanta a sua agora!') + '</span><i style="width:' + Math.min(100, Math.round(v.taken / v.total * 100)) + '%"></i>';
+      box.hidden = false;
+    }
+    if (fl && !out) { fl.textContent = '🔥 Restam só ' + v.remaining + ' vagas · Inscreva-se'; fl.hidden = false; }
+  }).catch(() => {});
+})();
