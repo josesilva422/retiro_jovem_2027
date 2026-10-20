@@ -1,4 +1,4 @@
-const { loadConfig, loadPricing, json, parseBody, sb, checkAdmin, adminLogin, adminRefresh } = require('./_shared');
+const { loadConfig, loadPricing, json, parseBody, sb, checkAdmin, adminLogin, adminRefresh, authConfigured, authAdmin, isAdminUser, pinned } = require('./_shared');
 
 const toApi = r => ({ id: r.id, protocol: r.protocol, status: r.status, createdAt: r.created_at, participants: r.participants, payment: r.payment, info: r.info || null });
 
@@ -30,6 +30,41 @@ exports.handler = async event => {
   const denied = await checkAdmin(event);
   if (denied) return json(denied.status, { error: denied.error });
   try {
+    // ---- Usuários do painel (só no modo e-mail + senha) ----
+    if (action === 'users' || action === 'user-delete') {
+      if (!authConfigured()) return json(409, { error: 'Ative o login por e-mail para gerenciar usuários.' });
+      const me = event.adminEmail;
+      if (event.httpMethod === 'GET' && action === 'users') {
+        const r = await authAdmin('users?per_page=200');
+        if (!r.ok) return json(502, { error: 'Não foi possível listar os usuários.' });
+        const list = (r.data.users || []).filter(isAdminUser).map(u => ({ id: u.id, email: u.email, createdAt: u.created_at, lastSignIn: u.last_sign_in_at, fixed: pinned(u.email), me: String(u.email).toLowerCase() === me }));
+        return json(200, { users: list });
+      }
+      if (event.httpMethod === 'POST' && action === 'users') {
+        const b = parseBody(event), email = String(b.email || '').trim().toLowerCase(), password = String(b.password || '');
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return json(400, { error: 'Informe um e-mail válido.' });
+        if (password.length < 8) return json(400, { error: 'A senha precisa ter pelo menos 8 caracteres.' });
+        const r = await authAdmin('users', { method: 'POST', body: { email, password, email_confirm: true, app_metadata: { role: 'admin' } } });
+        if (!r.ok) {
+          const msg = String((r.data && (r.data.msg || r.data.message || r.data.error_description)) || '');
+          if (r.status === 422 || /already|registered|exists/i.test(msg)) return json(409, { error: 'Já existe um usuário com este e-mail.' });
+          if (/password/i.test(msg)) return json(400, { error: 'Senha fraca ou inválida. Use uma senha maior e mais difícil.' });
+          return json(502, { error: 'Não foi possível criar o usuário.' });
+        }
+        return json(200, { ok: true, email });
+      }
+      if (event.httpMethod === 'POST' && action === 'user-delete') {
+        const id = String(parseBody(event).id || '');
+        if (!/^[0-9a-f-]{36}$/i.test(id)) return json(400, { error: 'Usuário inválido.' });
+        const g = await authAdmin('users/' + id);
+        if (!g.ok) return json(404, { error: 'Usuário não encontrado.' });
+        if (String(g.data.email).toLowerCase() === me) return json(400, { error: 'Você não pode remover o seu próprio acesso.' });
+        if (pinned(g.data.email)) return json(400, { error: 'Este e-mail está fixo no Netlify (ADMIN_EMAILS) e só pode ser removido por lá.' });
+        const d = await authAdmin('users/' + id, { method: 'DELETE' });
+        return d.ok ? json(200, { ok: true }) : json(502, { error: 'Não foi possível remover.' });
+      }
+    }
+
     if (event.httpMethod === 'GET' && action === 'data') {
       const r = await sb('registrations?select=*&order=created_at.asc');
       if (!r.ok) throw new Error('db');

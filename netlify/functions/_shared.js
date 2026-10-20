@@ -97,6 +97,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 const authKey = () => process.env.SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_ANON_KEY || '';
 const authConfigured = () => !!authKey();
 const adminEmails = () => String(process.env.ADMIN_EMAILS || '').split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
+const isAdminUser = u => !!u && (adminEmails().includes(String(u.email || '').toLowerCase()) || (u.app_metadata && u.app_metadata.role === 'admin'));
 const safeEqual = (x, y) => { const p = Buffer.from(String(x)), q = Buffer.from(String(y)); return p.length === q.length && crypto.timingSafeEqual(p, q); };
 
 async function authCall(path, { method = 'POST', body, token } = {}) {
@@ -116,6 +117,20 @@ const sessionOut = d => ({
   expires_at: d.expires_at || Math.floor(Date.now() / 1000) + (d.expires_in || 3600), email: d.user && d.user.email
 });
 
+// Gestão de contas (API de administração do Supabase Auth, com a chave de serviço)
+async function authAdmin(path, { method = 'GET', body } = {}) {
+  const url = process.env.SUPABASE_URL, key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !key) throw new Error('supabase-not-configured');
+  const base = url.trim().replace(/\/+$/, '').replace(/\/rest\/v1$/, '');
+  const res = await fetch(`${base}/auth/v1/admin/${path}`, {
+    method, headers: { apikey: key, 'Content-Type': 'application/json', ...(key.startsWith('eyJ') ? { Authorization: `Bearer ${key}` } : {}) },
+    body: body ? JSON.stringify(body) : undefined
+  });
+  let data = null; try { data = await res.json(); } catch { /* sem corpo */ }
+  return { ok: res.ok, status: res.status, data };
+}
+const pinned = email => adminEmails().includes(String(email || '').toLowerCase());
+
 async function adminLogin(body) {
   const email = String(body.email || '').trim().toLowerCase(), password = String(body.password || '');
   if (!email || !password) return { status: 400, error: 'Informe o e-mail e a senha.' };
@@ -125,7 +140,6 @@ async function adminLogin(body) {
     if (!safeEqual(password.trim(), real)) { await sleep(600); return { status: 401, error: 'E-mail ou senha incorretos.' }; }
     return { session: { mode: 'legacy', email } };
   }
-  if (!adminEmails().length) return { status: 503, error: 'Nenhum e-mail autorizado: configure ADMIN_EMAILS no Netlify.' };
   const r = await authCall('token?grant_type=password', { body: { email, password } });
   if (!r.ok) {
     await sleep(600);                                        // dificulta tentativa e erro
@@ -133,7 +147,7 @@ async function adminLogin(body) {
     if (r.status >= 500) return { status: 502, error: 'Serviço de login indisponível. Tente novamente.' };
     return { status: 401, error: 'E-mail ou senha incorretos.' };
   }
-  if (!adminEmails().includes(email)) return { status: 403, error: 'Este e-mail não tem acesso ao painel.' };
+  if (!isAdminUser(r.data.user)) return { status: 403, error: 'Este e-mail não tem acesso ao painel.' };
   return { session: sessionOut(r.data) };
 }
 
@@ -141,7 +155,7 @@ async function adminRefresh(body) {
   if (!authConfigured()) return { status: 400, error: 'Não há sessão para renovar.' };
   const r = await authCall('token?grant_type=refresh_token', { body: { refresh_token: String(body.refresh_token || '') } });
   if (!r.ok) return { status: 401, error: 'Sessão expirada. Entre novamente.' };
-  if (!adminEmails().includes(String((r.data.user && r.data.user.email) || '').toLowerCase())) return { status: 403, error: 'Este e-mail não tem acesso ao painel.' };
+  if (!isAdminUser(r.data.user)) return { status: 403, error: 'Este e-mail não tem acesso ao painel.' };
   return { session: sessionOut(r.data) };
 }
 
@@ -150,10 +164,10 @@ async function checkAdmin(event) {
   if (authConfigured()) {
     const bearer = String(h.authorization || h.Authorization || '').replace(/^Bearer\s+/i, '').trim();
     if (!bearer) return { status: 401, error: 'Entre com o seu e-mail e a sua senha.' };
-    if (!adminEmails().length) return { status: 503, error: 'Nenhum e-mail autorizado: configure ADMIN_EMAILS no Netlify.' };
     const r = await authCall('user', { method: 'GET', token: bearer });
     if (!r.ok) return { status: 401, error: 'Sessão expirada. Entre novamente.' };
-    if (!adminEmails().includes(String((r.data && r.data.email) || '').toLowerCase())) return { status: 403, error: 'Este e-mail não tem acesso ao painel.' };
+    if (!isAdminUser(r.data)) return { status: 403, error: 'Este e-mail não tem acesso ao painel.' };
+    event.adminEmail = String(r.data.email || '').toLowerCase();
     return null;
   }
   // Modo temporário: senha única. Tolerante a espaço/quebra de linha na variável e a símbolos (vem codificada).
@@ -166,4 +180,4 @@ async function checkAdmin(event) {
   return { status: 401, error: 'Sessão inválida. Entre novamente.' };
 }
 
-module.exports = { loadConfig, loadPricing, json, parseBody, sb, validatePerson, checkAdmin, adminLogin, adminRefresh, authConfigured };
+module.exports = { loadConfig, loadPricing, json, parseBody, sb, validatePerson, checkAdmin, adminLogin, adminRefresh, authConfigured, authAdmin, isAdminUser, pinned };

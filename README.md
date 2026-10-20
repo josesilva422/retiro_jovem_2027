@@ -24,7 +24,7 @@ Suba esta pasta para um repositório (o `.gitignore` já protege `data/` e `.env
 3. Faça o deploy (ou **Trigger deploy** depois de criar as variáveis).
 
 ### 4. Ver as inscrições
-**Login por e-mail + senha:** no Supabase, em **Authentication > Users > Add user**, crie uma conta por pessoa (marque *Auto Confirm User*) e desative cadastros públicos em **Authentication > Sign In / Providers** (*Allow new users to sign up* desligado). Depois defina `SUPABASE_PUBLISHABLE_KEY` e `ADMIN_EMAILS` no Netlify e faça um novo deploy. Só e-mails da lista entram.
+**Login por e-mail + senha:** no Supabase, em **Authentication > Users > Add user**, crie uma conta por pessoa (marque *Auto Confirm User*) e desative cadastros públicos em **Authentication > Sign In / Providers** (*Allow new users to sign up* desligado). Depois defina `SUPABASE_PUBLISHABLE_KEY` e `ADMIN_EMAILS` no Netlify e faça um novo deploy. Só e-mails da lista entram. Depois de entrar, o botão **Usuários** do painel cria e remove outros acessos (e-mail + senha); os e-mails de `ADMIN_EMAILS` ficam fixos e só saem pelo Netlify.
 Abra `https://SEU-SITE.netlify.app/admin` e entre com e-mail e senha. Lá você vê todos os cadastros, confirma o pagamento, cancela e baixa o CSV.
 
 ## Para abrir as inscrições
