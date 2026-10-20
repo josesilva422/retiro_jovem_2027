@@ -449,3 +449,7 @@ input:disabled{background:#ece6d6;cursor:not-allowed}
 .wc-b1,.wc-b2{position:absolute;inset:0;border:3px solid var(--k)}
 .wc-b1{background:var(--o);transform:rotate(3.4deg) translate(8px,8px)}
 .wc-b2{background:var(--n);transform:rotate(-5.5deg) translate(-8px,12px)}
+
+.pixbox{margin-top:8px;padding:10px;border:2px dashed var(--k);background:#fff;width:100%;display:flex;flex-direction:column;gap:4px}
+.pixbox code{font:700 1rem var(--txt);word-break:break-all;user-select:all}
+.paywarn{margin:12px 0;padding:12px 14px;background:var(--y);border:3px solid var(--k);font-weight:600;text-align:left}

@@ -17,11 +17,14 @@
 
   // ---------- Contatos para pagamento ----------
   const contacts = cfg.contacts || [];
-  const contactCards = mine => [...contacts].sort((a, b) => (b.district === mine) - (a.district === mine)).map(c => {
+  const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
+  const payTip = `<div class="paywarn"><b>Antes de pagar:</b> confira se o nome do titular que aparece no seu app é o mesmo informado abaixo. Depois do pagamento, <b>envie o comprovante ao responsável do seu distrito</b> (WhatsApp), com o protocolo da inscrição.</div>`;
+  const contactCards = (mine, withPix) => [...contacts].sort((a, b) => (b.district === mine) - (a.district === mine)).map(c => {
     const msg = encodeURIComponent('Olá! Quero combinar o pagamento da inscrição no RECONNECT.' + (window.__protocol ? ' Protocolo: ' + window.__protocol : ''));
     return `<div class="contact${c.district === mine ? ' mine' : ''}">
       <span class="c-dist">${c.district}${c.district === mine ? ' · seu distrito' : ''}</span>
       <b>${c.name}</b>${c.role ? `<small>${c.role}</small>` : ''}
+      ${withPix && c.pix ? `<div class="pixbox"><small>Chave Pix${c.pixHolder ? ' · titular: <b>' + esc(c.pixHolder) + '</b>' : ''}</small><code>${esc(c.pix)}</code><button type="button" class="btn sm copy" data-copy="${esc(c.pix)}">Copiar chave Pix</button></div>` : ''}
       <a class="btn sm" href="https://wa.me/${c.whatsapp}?text=${msg}" target="_blank" rel="noopener">WhatsApp ${c.display}</a>
     </div>`;
   }).join('');
@@ -311,6 +314,12 @@
     btn.disabled = false; btn.textContent = 'Enviar pré-cadastro';
   });
 
+  document.addEventListener('click', e => {
+    const b = e.target.closest && e.target.closest('[data-copy]'); if (!b) return;
+    const done = () => { b.textContent = 'Chave copiada!'; setTimeout(() => { b.textContent = 'Copiar chave Pix'; }, 2000); };
+    if (navigator.clipboard) navigator.clipboard.writeText(b.dataset.copy).then(done, () => {}); else done();
+  });
+
   function showSuccess(j) {
     form.hidden = true; $('#success').hidden = false; $('#protocol').textContent = j.protocol;
     const valor = j.total ? brl(j.total) : null;
@@ -321,7 +330,7 @@
     const plan = j.plan ? `<div class="planbox"><b>Parcelas</b>${j.plan.map(x => `<div class="row"><span>Parcela ${x.n} · ${fmtDate(x.due)}</span><span>${brl(x.amount)}</span></div>`).join('')}<small>As parcelas são acompanhadas pela organização. Combine a primeira com uma das pessoas abaixo.</small></div>` : '';
     $('#payInstr').innerHTML = `<b>Próximo passo: realizar o pagamento</b><br>${valor ? 'Valor: <b>' + valor + '</b> · ' : ''}Forma escolhida: ${how}<br>${plan}${auth}
       Entre em contato com uma destas pessoas e informe o protocolo <b>${j.protocol}</b>:
-      <div class="contacts">${contactCards(mine)}</div>`;
+      ${payTip}<div class="contacts">${contactCards(mine, true)}</div>`;
     $('#inscricao').scrollIntoView({ behavior: 'smooth' });
     celebrate();
   }
