@@ -20,7 +20,7 @@
   const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
   const payTip = `<div class="paywarn"><b>Antes de pagar:</b> confira se o nome do titular que aparece no seu app é o mesmo informado abaixo. Depois do pagamento, <b>envie o comprovante ao responsável do seu distrito</b> (WhatsApp), com o protocolo da inscrição.</div>`;
   const contactCards = (mine, withPix) => [...contacts].sort((a, b) => (b.district === mine) - (a.district === mine)).map(c => {
-    const msg = encodeURIComponent('Olá! Quero combinar o pagamento da inscrição no RECONNECT.' + (window.__protocol ? ' Protocolo: ' + window.__protocol : ''));
+    const pk = window.__pkg, msg = encodeURIComponent('Olá! Quero pagar a inscrição no RECONNECT.' + (window.__protocol ? ' Protocolo: ' + window.__protocol + '.' : '') + (pk ? ' Vagas: ' + pk.vagas + '. Valor total do pacote: ' + pk.total + (pk.how ? ' (' + pk.how + ')' : '') + '. Pode gerar o link de pagamento?' : ''));
     return `<div class="contact${c.district === mine ? ' mine' : ''}">
       <span class="c-dist">${c.district}${c.district === mine ? ' · seu distrito' : ''}</span>
       <b>${c.name}</b>${c.role ? `<small>${c.role}</small>` : ''}
@@ -159,7 +159,7 @@
       <ul class="rules">
         <li><b>À vista (Pix):</b> 10% de desconto.</li>
         <li><b>Crediário:</b> em 2x ou 3x, uma parcela por mês, sem acréscimo (sem o desconto à vista). As parcelas são acompanhadas pela organização.${untilTxt}</li>
-        <li><b>Cartão de crédito:</b> em até ${maxInst}x, com acréscimo da maquininha. Disponível para quem foi convidado pelo distrito ${cardWho}.</li>
+        <li><b>Cartão de crédito:</b> em até ${maxInst}x, com acréscimo da maquininha. ${(cfg.districts||[]).every(d => (cfg.cardDistricts||[]).includes(d)) ? "Disponível para todas as inscrições." : "Disponível para quem foi convidado pelo distrito " + cardWho + "."}</li>
         <li><b>Combo familiar</b> (a partir de ${minPeople} participantes): 10% de desconto também no pagamento parcelado.</li>
         <li><b>Faixa etária:</b> de 0 a 4 anos, gratuito · de 5 a 9 anos, meia inscrição · a partir de 10 anos, valor integral.</li>
       </ul>
@@ -325,6 +325,7 @@
     const valor = j.total ? brl(j.total) : null;
     const mine = $('#people .person [name=district]')?.value || '';
     window.__protocol = j.protocol;
+    window.__pkg = { vagas: document.querySelectorAll('#people .person').length || 1, total: valor || '', how: j.method === 'pix' ? 'Pix' : j.method === 'crediario' ? 'crediário ' + j.installments + 'x' : 'cartão ' + j.installments + 'x' };
     const how = j.method === 'pix' ? 'Pix (à vista)' : j.method === 'crediario' ? `crediário em ${j.installments}x (uma parcela por mês)` : `cartão de crédito em ${j.installments}x`;
     const auth = j.authorization ? `<div class="planbox"><b>Autorização dos responsáveis</b><small>Leve a autorização assinada no dia do retiro. <a href="/autorizacao.html?protocolo=${encodeURIComponent(j.protocol)}&menores=${encodeURIComponent(window.__minors || '')}" target="_blank" rel="noopener"><b>Baixar o modelo (já com seu protocolo)</b></a></small></div>` : '';
     const plan = j.plan ? `<div class="planbox"><b>Parcelas</b>${j.plan.map(x => `<div class="row"><span>Parcela ${x.n} · ${fmtDate(x.due)}</span><span>${brl(x.amount)}</span></div>`).join('')}<small>As parcelas são acompanhadas pela organização. Combine a primeira com uma das pessoas abaixo.</small></div>` : '';
