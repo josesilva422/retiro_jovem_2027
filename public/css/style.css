@@ -467,3 +467,9 @@ input:disabled{background:#ece6d6;cursor:not-allowed}
 .vagas-float{animation-name:vgfloat}
 @keyframes vgfloat{0%,100%{transform:translateX(-50%) scale(1)}50%{transform:translateX(-50%) scale(1.05)}}
 @media (prefers-reduced-motion:reduce){.vagas-box,.vagas-float{animation:none}}
+
+.vg-contacts{display:grid;gap:10px;margin:14px 0 6px;grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+.vg-contact{display:flex;flex-direction:column;gap:2px;padding:12px;background:#fff;color:var(--k);border:3px solid var(--k);text-decoration:none;text-align:left}
+.vg-contact small{font:800 .68rem var(--txt);text-transform:uppercase;letter-spacing:.08em;color:var(--n)}
+.vg-contact b{display:block;font:400 1.4rem/1.1 var(--disp);text-transform:uppercase;letter-spacing:0}
+.vg-contact span{margin:0;font-weight:700}

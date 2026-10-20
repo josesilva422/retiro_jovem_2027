@@ -34,7 +34,7 @@ exports.handler = async event => {
     // Limite de vagas
     const total = (cfg.capacity && cfg.capacity.total) || 0;
     if (total) {
-      const occ = await sb('registrations?select=participants&status=neq.cancelada');
+      const occ = await sb('registrations?select=participants&status=eq.confirmada');
       if (!occ.ok) throw new Error('db');
       const left = total - occ.data.reduce((s, x) => s + x.participants.length, 0);
       if (left <= 0) return json(409, { error: 'As vagas do retiro esgotaram. Fale com o responsável do seu distrito.' });

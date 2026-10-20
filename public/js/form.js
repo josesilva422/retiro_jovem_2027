@@ -353,16 +353,20 @@
 
 // ---------- Aviso de últimas vagas ----------
 (() => {
-  fetch('/api/vagas').then(r => r.json()).then(v => {
+  const esc = t => String(t == null ? '' : t).replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
+  Promise.all([fetch('/api/vagas').then(r => r.json()), fetch('/api/config').then(r => r.json())]).then(([v, cfg]) => {
+    const form = document.getElementById('regForm');
     if (!v || !v.total || v.remaining == null || v.remaining > (v.warnAt || 20)) return;
     const box = document.getElementById('vagasBox'), fl = document.getElementById('vagasFloat');
     const out = v.remaining <= 0;
     const txt = out ? 'VAGAS ESGOTADAS' : v.remaining === 1 ? 'ÚLTIMA VAGA!' : 'ÚLTIMAS ' + v.remaining + ' VAGAS!';
     if (box) {
       box.className = 'vagas-box on' + (out ? ' out' : '');
-      box.innerHTML = '<b>' + txt + '</b><span>' + (out ? 'Todas as ' + v.total + ' vagas foram preenchidas. Fale com o responsável do seu distrito.' : 'Restam apenas ' + v.remaining + ' de ' + v.total + ' vagas. Garanta a sua agora!') + '</span><i style="width:' + Math.min(100, Math.round(v.taken / v.total * 100)) + '%"></i>';
+      const who = (cfg.contacts || []).map(c => '<a class="vg-contact" href="https://wa.me/' + esc(c.whatsapp) + '" target="_blank" rel="noopener"><small>' + esc(c.district) + '</small><b>' + esc(c.name) + '</b><span>' + esc(c.display) + '</span></a>').join('');
+      box.innerHTML = '<b>' + txt + '</b><span>' + (out ? 'Todas as ' + v.total + ' vagas foram confirmadas. Para saber sobre lista de espera ou desistências, fale com o responsável do seu distrito:' : 'Restam apenas ' + v.remaining + ' de ' + v.total + ' vagas. Garanta a sua agora!') + '</span>' + (out ? '<div class="vg-contacts">' + who + '</div>' : '') + '<i style="width:' + Math.min(100, Math.round(v.taken / v.total * 100)) + '%"></i>';
       box.hidden = false;
     }
+    if (out) { form.hidden = true; const pn = document.getElementById('payNote'); if (pn) pn.hidden = true; }
     if (fl && !out) { fl.textContent = '🔥 Restam só ' + v.remaining + ' vagas · Inscreva-se'; fl.hidden = false; }
   }).catch(() => {});
 })();

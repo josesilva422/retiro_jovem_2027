@@ -111,7 +111,7 @@ async function handleApi(req, res, url) {
   const cfg = loadConfig();
   const ip = req.socket.remoteAddress;
 
-  const takenSpots = () => readJson(REG_FILE).filter(r => r.status !== 'cancelada').reduce((s, r) => s + r.participants.length, 0);
+  const takenSpots = () => readJson(REG_FILE).filter(r => r.status === 'confirmada').reduce((s, r) => s + r.participants.length, 0);
   if (req.method === 'GET' && url.pathname === '/api/vagas') {
     const cap = cfg.capacity || {}, total = cap.total || 0, taken = takenSpots();
     return send(res, 200, { total, taken, remaining: total ? Math.max(total - taken, 0) : null, warnAt: cap.warnAt || 20 });
