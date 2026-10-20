@@ -6,6 +6,7 @@ exports.handler = async event => {
   if (event.httpMethod !== 'POST') return json(405, { error: 'Método não permitido.' });
   try {
     if (!ip.enabled()) return json(503, { error: 'O pagamento online ainda não está disponível. Fale com o responsável do seu distrito.' });
+    await new Promise(r => setTimeout(r, 300));   // freia tentativas em massa
     const q = String(parseBody(event).protocol || '').trim().toUpperCase();
     if (!/^RC-[0-9A-F]{6}$/.test(q)) return json(400, { error: 'Protocolo inválido.' });
     const r = await ip.ensureLink(q);
