@@ -1,4 +1,4 @@
-const { loadConfig, loadPricing, json, parseBody, sb, checkAdmin } = require('./_shared');
+const { loadConfig, loadPricing, json, parseBody, sb, checkAdmin, adminLogin, adminRefresh } = require('./_shared');
 
 const toApi = r => ({ id: r.id, protocol: r.protocol, status: r.status, createdAt: r.created_at, participants: r.participants, payment: r.payment, info: r.info || null });
 
@@ -12,10 +12,23 @@ function infoCols(r, p, first) {
 }
 
 exports.handler = async event => {
+  const action = event.path.split('/').filter(Boolean).pop();
+
+  // Entrar e renovar a sessão: não exigem estar logado
+  if (event.httpMethod === 'POST' && (action === 'login' || action === 'refresh')) {
+    try {
+      const b = parseBody(event);
+      const r = action === 'login' ? await adminLogin(b) : await adminRefresh(b);
+      return r.session ? json(200, r.session) : json(r.status, { error: r.error });
+    } catch (e) {
+      if (e.message === 'bad-json') return json(400, { error: 'JSON inválido.' });
+      console.error('login:', e.message);
+      return json(500, { error: 'Não foi possível entrar agora. Tente novamente.' });
+    }
+  }
+
   const denied = await checkAdmin(event);
   if (denied) return json(denied.status, { error: denied.error });
-
-  const action = event.path.split('/').filter(Boolean).pop();
   try {
     if (event.httpMethod === 'GET' && action === 'data') {
       const r = await sb('registrations?select=*&order=created_at.asc');

@@ -18,11 +18,14 @@ Suba esta pasta para um repositório (o `.gitignore` já protege `data/` e `.env
 2. Em **Site configuration > Environment variables**, crie:
    - `SUPABASE_URL` = Project URL
    - `SUPABASE_SERVICE_ROLE_KEY` = chave service_role
-   - `ADMIN_PASSWORD` = uma senha forte para o painel
+   - `ADMIN_PASSWORD` = senha única (modo temporário; só vale enquanto as duas variáveis abaixo não existirem)
+   - `SUPABASE_PUBLISHABLE_KEY` = chave pública (publishable/anon) do Supabase
+   - `ADMIN_EMAILS` = e-mails autorizados no painel, separados por vírgula
 3. Faça o deploy (ou **Trigger deploy** depois de criar as variáveis).
 
 ### 4. Ver as inscrições
-Abra `https://SEU-SITE.netlify.app/admin`, digite o `ADMIN_PASSWORD`. Lá você vê todos os cadastros, confirma o pagamento, cancela e baixa o CSV.
+**Login por e-mail + senha:** no Supabase, em **Authentication > Users > Add user**, crie uma conta por pessoa (marque *Auto Confirm User*) e desative cadastros públicos em **Authentication > Sign In / Providers** (*Allow new users to sign up* desligado). Depois defina `SUPABASE_PUBLISHABLE_KEY` e `ADMIN_EMAILS` no Netlify e faça um novo deploy. Só e-mails da lista entram.
+Abra `https://SEU-SITE.netlify.app/admin` e entre com e-mail e senha. Lá você vê todos os cadastros, confirma o pagamento, cancela e baixa o CSV.
 
 ## Para abrir as inscrições
 1. `config.json`: `"registrationOpen": true`
@@ -43,7 +46,7 @@ Programação, line-up, local (nome, endereço, link do mapa, fotos), novidades,
 - Há CPF e telefone no banco: limite quem tem acesso ao Supabase/Netlify e apague os dados depois do evento.
 
 ## Testar no computador
-`node server.js` → http://localhost:3000 (admin em `/admin`, senha padrão local `troque-esta-senha`, ou defina `ADMIN_PASSWORD`).
+`node server.js` → http://localhost:3000 (admin em `/admin`, qualquer e-mail + a senha local `troque-esta-senha`, ou defina `ADMIN_PASSWORD`).
 
 ## Dados do responsável e menores de idade
 - **Todos** os participantes informam alergia, restrição alimentar, medicamento controlado e acessibilidade; só o 1º (responsável) informa o contato de emergência e a autorização de uso de imagem (obrigatória). Isso aparece só no painel (Detalhes e Validar entrada) e no CSV; **a consulta pública nunca mostra**.

@@ -57,6 +57,9 @@ button{cursor:pointer;touch-action:manipulation}
 .pw-row input{flex:1;min-width:0}
 input,select{width:100%;min-height:48px;padding:10px 14px;border:3px solid var(--k);border-radius:8px;background:#fff;color:var(--k);font-size:16px}
 input:focus,select:focus{outline:0;box-shadow:4px 4px 0 var(--o)}
+.login .lbl-pw{margin-top:14px}
+#who{font:700 .78rem var(--txt);margin-right:10px;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;vertical-align:middle;display:inline-block}
+@media (max-width:760px){#who{display:none}}
 .login .btn.full{width:100%;margin-top:16px}
 .msg{min-height:1.4em;margin-top:12px;font-weight:800;color:var(--red)}
 
@@ -193,7 +196,7 @@ dialog::backdrop{background:rgba(10,31,64,.62)}
   <div class="brand"><img src="/img/logo-conecta-azul.png" alt="" onerror="this.remove()"><span>RE<b>CONNECT</b></span><small>Painel</small></div>
   <div class="top-r">
     <div class="zoom" role="group" aria-label="Tamanho da tela"><button type="button" id="zOut" aria-label="Diminuir">−</button><span id="zVal">90%</span><button type="button" id="zIn" aria-label="Aumentar">+</button></div>
-    <div id="topActions" hidden><button class="btn light sm" id="logout" type="button">Sair</button></div>
+    <div id="topActions" hidden><span id="who"></span><button class="btn light sm" id="logout" type="button">Sair</button></div>
   </div>
 </header>
 
@@ -201,11 +204,12 @@ dialog::backdrop{background:rgba(10,31,64,.62)}
 <main class="login-wrap" id="loginView">
   <form class="login" id="loginForm" method="post" action="javascript:void(0)" onsubmit="return false" autocomplete="on">
     <h1>Painel da organização</h1>
-    <p>Digite a senha para ver as inscrições.</p>
-    <input type="text" name="username" value="admin" autocomplete="username" hidden>
-    <label for="pw">Senha</label>
+    <p>Entre com o seu e-mail e a sua senha.</p>
+    <label for="em">E-mail</label>
+    <input id="em" name="email" type="email" placeholder="seu@email.com" autocomplete="username" autocapitalize="off" autocorrect="off" spellcheck="false" inputmode="email" required>
+    <label for="pw" class="lbl-pw">Senha</label>
     <div class="pw-row">
-      <input id="pw" name="password" type="password" placeholder="Senha do painel" autocomplete="current-password" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="go">
+      <input id="pw" name="password" type="password" placeholder="Sua senha" autocomplete="current-password" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="go">
       <button type="button" class="btn light sm" id="showPw" aria-pressed="false">Mostrar</button>
     </div>
     <button class="btn full" type="submit" id="go">Entrar</button>
@@ -215,6 +219,7 @@ dialog::backdrop{background:rgba(10,31,64,.62)}
 
 <!-- PAINEL -->
 <main class="wrap" id="app" hidden>
+  <div class="scope" id="legacyNote" hidden>Modo temporário: o login por e-mail ainda não foi ativado no Netlify (veja o README). Por enquanto vale a senha única.</div>
   <div class="hello">
     <div>
       <h2>Inscrições</h2>
@@ -263,11 +268,25 @@ const fmtCpf = v => !v ? 'sem CPF' : String(v).replace(/\D/g, '').replace(/(\d{3
 const fmtPhone = v => { v = String(v).replace(/\D/g, ''); return v.length > 10 ? v.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3') : v.replace(/(\d{2})(\d{4})(\d{4})/, '($1) $2-$3'); };
 const STATUS = { 'pre-cadastro': 'Pré-cadastro', confirmada: 'Confirmada', cancelada: 'Cancelada' };
 const LODGE = { camping: '⛺ Camping', dormitorio: '🛏 Dormitório' };
-let pw = '', data = null, cfg = { prices: {} };
+let S = null, data = null, cfg = { prices: {} };   // S = sessão (e-mail + senha)
 const F = { status: 'todas', lodge: null, dist: null };   // lodge/dist: clique de novo para desmarcar
-try { pw = sessionStorage.getItem('rc_pw') || ''; } catch {}
-
-const api = (p, o = {}) => fetch(p, { ...o, headers: { 'x-admin-password': encodeURIComponent(pw), 'Content-Type': 'application/json' } });
+try { sessionStorage.removeItem('rc_pw'); S = JSON.parse(sessionStorage.getItem('rc_sess') || 'null'); } catch {}
+const saveS = s => { S = s; try { s ? sessionStorage.setItem('rc_sess', JSON.stringify(s)) : sessionStorage.removeItem('rc_sess'); } catch {} };
+const authHeaders = () => ({ 'Content-Type': 'application/json', ...(!S ? {} : S.mode === 'auth' ? { Authorization: 'Bearer ' + S.access_token } : { 'x-admin-password': encodeURIComponent(S.password || '') }) });
+let refreshing = null;
+function refreshSession() {   // renova o acesso sem pedir a senha de novo (sessão do Supabase dura ~1 h)
+  if (!S || S.mode !== 'auth' || !S.refresh_token) return Promise.resolve(false);
+  refreshing = refreshing || fetch('/api/admin/refresh', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ refresh_token: S.refresh_token }) })
+    .then(async r => { if (!r.ok) return false; saveS(await r.json()); return true; }).catch(() => false).finally(() => { refreshing = null; });
+  return refreshing;
+}
+async function api(p, o = {}) {
+  if (S && S.mode === 'auth' && S.expires_at && S.expires_at - Date.now() / 1000 < 90) await refreshSession();
+  let r = await fetch(p, { ...o, headers: authHeaders() });
+  if (r.status === 401 && S && S.mode === 'auth' && await refreshSession()) r = await fetch(p, { ...o, headers: authHeaders() });
+  return r;
+}
+function showLogin(msg) { $('#loginView').hidden = false; $('#app').hidden = true; $('#topActions').hidden = true; $('#msg').textContent = msg || ''; }
 function toast(t) { const e = $('#toast'); e.textContent = t; e.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(() => e.hidden = true, 2600); }
 
 async function load(silent) {
@@ -275,14 +294,14 @@ async function load(silent) {
   try { r = await api('/api/admin/data'); } catch { $('#msg').textContent = 'Sem conexão com o servidor.'; return false; }
   if (!r.ok) {
     let m = 'Erro ' + r.status; try { m = (await r.json()).error || m; } catch {}
-    $('#msg').textContent = m; $('#go').disabled = false; $('#go').textContent = 'Entrar';
-    if (r.status === 401) { try { sessionStorage.removeItem('rc_pw'); } catch {} }
+    if (r.status === 401 || r.status === 403) { saveS(null); showLogin(m); } else { $('#msg').textContent = m; }
+    $('#go').disabled = false; $('#go').textContent = 'Entrar';
     return false;
   }
   data = await r.json();
   try { cfg = await (await fetch('/api/config')).json(); } catch {}
-  try { sessionStorage.setItem('rc_pw', pw); } catch {}
   $('#loginView').hidden = true; $('#app').hidden = false; $('#topActions').hidden = false;
+  $('#who').textContent = (S && S.email) || ''; $('#legacyNote').hidden = !(S && S.mode === 'legacy');
   render(); if (silent) toast('Atualizado');
   return true;
 }
@@ -454,9 +473,22 @@ function validate(q) {
 }
 
 // Eventos
-$('#loginForm').addEventListener('submit', e => { e.preventDefault(); pw = $('#pw').value.trim(); $('#msg').textContent = ''; $('#go').disabled = true; $('#go').textContent = 'Entrando...'; load(); });
+$('#loginForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const email = $('#em').value.trim(), password = $('#pw').value;
+  $('#msg').textContent = ''; $('#go').disabled = true; $('#go').textContent = 'Entrando...';
+  const fail = m => { $('#msg').textContent = m; $('#go').disabled = false; $('#go').textContent = 'Entrar'; };
+  try {
+    const r = await fetch('/api/admin/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password }) });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) return fail(j.error || 'Não foi possível entrar.');
+    saveS(j.mode === 'legacy' ? { mode: 'legacy', email: j.email, password: password.trim() } : j);
+    $('#pw').value = '';
+    load();
+  } catch { fail('Sem conexão com o servidor.'); }
+});
 $('#showPw').onclick = () => { const i = $('#pw'), s = i.type === 'password'; i.type = s ? 'text' : 'password'; $('#showPw').textContent = s ? 'Ocultar' : 'Mostrar'; $('#showPw').setAttribute('aria-pressed', s); };
-$('#logout').onclick = () => { try { sessionStorage.removeItem('rc_pw'); } catch {} location.reload(); };
+$('#logout').onclick = () => { saveS(null); location.reload(); };
 $('#reload').onclick = () => load(true);
 $('#q').addEventListener('input', () => data && render());
 $('#app').addEventListener('click', e => {
@@ -519,7 +551,7 @@ $('#zIn').onclick = () => { zoom = ZS[Math.min(ZS.length - 1, ZS.indexOf(zoom) +
 addEventListener('resize', applyZoom);
 applyZoom();
 
-if (pw) load();
+if (S) load();
 </script>
 </body>
 </html>

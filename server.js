@@ -193,6 +193,14 @@ async function handleApi(req, res, url) {
 
   // ---------- Admin ----------
   if (url.pathname.startsWith('/api/admin/')) {
+    if (req.method === 'POST' && url.pathname === '/api/admin/login') {   // local: e-mail livre + ADMIN_PASSWORD
+      const b = await readBody(req);
+      const email = String(b.email || '').trim().toLowerCase(), pass = String(b.password || '').trim();
+      if (!email || !pass) return send(res, 400, { error: 'Informe o e-mail e a senha.' });
+      const a = Buffer.from(pass), z = Buffer.from(String(ADMIN_PASSWORD).trim());
+      if (a.length !== z.length || !crypto.timingSafeEqual(a, z)) return send(res, 401, { error: 'E-mail ou senha incorretos.' });
+      return send(res, 200, { mode: 'legacy', email });
+    }
     let raw = String(req.headers['x-admin-password'] || '');
     try { raw = decodeURIComponent(raw); } catch { /* usa como veio */ }
     const given = Buffer.from(raw.trim());
