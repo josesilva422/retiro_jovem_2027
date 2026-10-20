@@ -30,6 +30,16 @@ exports.handler = async event => {
   const denied = await checkAdmin(event);
   if (denied) return json(denied.status, { error: denied.error });
   try {
+    // Link de teste de R$ 1,00 (InfinitePay) para uma inscrição
+    if (event.httpMethod === 'POST' && action === 'test-link') {
+      const ip = require('./_infinitepay');
+      if (!ip.enabled()) return json(409, { error: 'Pagamento online da InfinitePay não está ativado (falta INFINITEPAY_HANDLE).' });
+      const b = parseBody(event);
+      if (!/^[0-9a-f-]{36}$/i.test(String(b.id))) return json(400, { error: 'ID inválido.' });
+      const r = await ip.testLink(String(b.id));
+      return r.url ? json(200, { url: r.url }) : json(r.status, { error: r.error });
+    }
+
     // ---- Usuários do painel (só no modo e-mail + senha) ----
     if (action === 'users' || action === 'user-delete') {
       if (!authConfigured()) return json(409, { error: 'Ative o login por e-mail para gerenciar usuários.' });

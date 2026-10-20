@@ -149,6 +149,7 @@ input:focus,select:focus{outline:0;box-shadow:4px 4px 0 var(--o)}
 dialog{margin:auto;border:3px solid var(--k);box-shadow:9px 9px 0 var(--k);padding:0;width:min(580px,100% - 24px);max-height:92vh;background:var(--c);color:var(--k);overflow:auto}
 .uitem{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 0;border-bottom:2px solid #d9d2c1;flex-wrap:wrap}.uitem span{word-break:break-all;font-weight:700}.uitem small{display:block;font-weight:600;color:#44546e}.uform{display:grid;gap:8px;margin-top:14px}.uform input{min-height:44px;padding:8px 10px;border:3px solid var(--k);background:#fff;font:600 1rem var(--txt)}#umsg{min-height:1.2em;font-weight:700}.uhint{display:block;margin-top:8px;color:#44546e}
 dialog::backdrop{background:rgba(10,31,64,.62)}
+.tp-out{margin:10px 16px 16px;padding:10px;border:3px dashed var(--k);background:#fff;word-break:break-all}
 .dlg-h{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 16px;background:var(--n);color:#fff;position:sticky;top:0}
 .dlg-h .proto{font-size:1.6rem}
 .dlg-b{padding:16px;display:grid;gap:14px}
@@ -467,7 +468,8 @@ function openDetails(id) {
       <div><div class="sec-t">Responsável: emergência e saúde</div>${infoBlock(r)}</div>
       <div><div class="sec-t">Pagamento</div>${payBlock(r)}</div>
     </div>
-    <div class="dlg-a">${actionBtns(r)}<button class="btn light xs" type="button" data-close>Fechar</button></div>`;
+    <div class="dlg-a">${actionBtns(r)}${r.status !== 'cancelada' && !r.payment.paid ? `<button class="btn light xs" type="button" data-testpay="${r.id}">Link de teste R$ 1</button>` : ''}<button class="btn light xs" type="button" data-close>Fechar</button></div>
+    <div id="testPayOut" class="tp-out" hidden></div>`;
   $('#dlg').showModal();
 }
 
@@ -562,7 +564,19 @@ document.addEventListener('click', e => {
   const nx = e.target.closest('[data-nextinst]');
   if (nx) { const r = data.registrations.find(x => x.id === nx.dataset.nextinst), it = r && nextInst(r); if (it) { nx.disabled = true; setInstallment(r.id, it.n, true); } }
 });
-$('#dlg').addEventListener('click', e => { const b = e.target.closest('[data-act]'); if (b) changeStatus(b); });
+$('#dlg').addEventListener('click', async e => {
+  const t = e.target.closest('[data-testpay]');
+  if (t) {   // gera um link de R$ 1,00 para testar o pagamento no cartão
+    const out = $('#testPayOut'); t.disabled = true; out.hidden = false; out.textContent = 'Gerando link...';
+    try {
+      const r = await api('/api/admin/test-link', { method: 'POST', body: JSON.stringify({ id: t.dataset.testpay }) });
+      const j = await r.json().catch(() => ({}));
+      out.innerHTML = r.ok ? '<b>Link de teste (R$ 1,00):</b><br><a href="' + esc(j.url) + '" target="_blank" rel="noopener">Abrir pagamento de teste</a><br><small>Ao pagar, a inscrição fica confirmada. Depois apague-a.</small>' : esc(j.error || 'Erro ao gerar o link.');
+    } catch { out.textContent = 'Sem conexão.'; }
+    t.disabled = false; return;
+  }
+  const b = e.target.closest('[data-act]'); if (b) changeStatus(b);
+});
 $('#vdlg').addEventListener('click', e => { const b = e.target.closest('[data-act]'); if (b) changeStatus(b); });
 $('#list').addEventListener('click', async e => {
   const b = e.target.closest('[data-act]'); if (!b) return;
