@@ -1,4 +1,6 @@
 [build]
+  # Site estático: não há o que compilar. Isto substitui qualquer comando de build (ex.: "hugo") salvo no painel do Netlify.
+  command = "echo 'Site estatico: sem build'"
   publish = "public"
   functions = "netlify/functions"
 

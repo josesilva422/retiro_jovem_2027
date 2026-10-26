@@ -75,7 +75,7 @@ const clean = (v, max = 120) => String(v ?? '').replace(/[<>]/g, '').trim().slic
 function validatePerson(p, cfg) {
   const out = {
     name: clean(p.name), age: parseInt(p.age, 10), cpf: String(p.cpf || '').replace(/\D/g, ''),
-    phone: String(p.phone || '').replace(/\D/g, ''), district: clean(p.district, 80), lodging: p.lodging
+    phone: loadPricing().phoneDigits(p.phone), district: clean(p.district, 80), lodging: p.lodging
   };
   if (out.name.split(/\s+/).length < 2) return { error: 'Informe o nome completo.' };
   if (!(out.age >= 0 && out.age <= 99)) return { error: `Idade inválida para ${out.name}.` };
@@ -175,7 +175,7 @@ async function checkAdmin(event) {
   if (!real) return { status: 503, error: 'Login não configurado no Netlify (falta ADMIN_PASSWORD).' };
   let raw = String(h['x-admin-password'] || '');
   try { raw = decodeURIComponent(raw); } catch { /* usa como veio */ }
-  if (safeEqual(raw.trim(), real)) return null;
+  if (safeEqual(raw.trim(), real)) { event.adminEmail = 'senha única (modo temporário)'; return null; }
   await sleep(600);
   return { status: 401, error: 'Sessão inválida. Entre novamente.' };
 }

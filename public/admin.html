@@ -148,6 +148,8 @@ input:focus,select:focus{outline:0;box-shadow:4px 4px 0 var(--o)}
 /* Detalhes e validação */
 dialog{margin:auto;border:3px solid var(--k);box-shadow:9px 9px 0 var(--k);padding:0;width:min(580px,100% - 24px);max-height:92vh;background:var(--c);color:var(--k);overflow:auto}
 .uitem{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 0;border-bottom:2px solid #d9d2c1;flex-wrap:wrap}.uitem span{word-break:break-all;font-weight:700}.uitem small{display:block;font-weight:600;color:#44546e}.uform{display:grid;gap:8px;margin-top:14px}.uform input{min-height:44px;padding:8px 10px;border:3px solid var(--k);background:#fff;font:600 1rem var(--txt)}#umsg{min-height:1.2em;font-weight:700}.uhint{display:block;margin-top:8px;color:#44546e}
+.hist{display:grid;gap:6px}.hist>div{padding:6px 8px;background:#fff;border:2px solid #d9d2c1}.hist small{display:block;color:#44546e;font-weight:600}.appr{color:var(--leaf);font-weight:800}
+.chg-r{display:flex;gap:8px;flex-wrap:wrap}.chg select{min-height:40px;padding:6px 8px;border:3px solid var(--k);background:#fff;font:600 .9rem var(--txt)}.chg-p{display:block;margin:8px 0;color:#44546e}
 dialog::backdrop{background:rgba(10,31,64,.62)}
 .dlg-h{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 16px;background:var(--n);color:#fff;position:sticky;top:0}
 .dlg-h .proto{font-size:1.6rem}
@@ -273,6 +275,7 @@ dialog::backdrop{background:rgba(10,31,64,.62)}
 </dialog>
 <div class="toast" id="toast" hidden></div>
 
+<script src="/js/pricing.js"></script>
 <script>
 // Segurança: se por qualquer motivo a senha chegar no endereço (?password=...), apaga da barra e do histórico.
 try { if (location.search) history.replaceState(null, '', location.pathname); } catch {}
@@ -415,7 +418,7 @@ function card(r, shown) {
       <div class="c-tags"><span class="lodge ${p.lodging}">${LODGE[p.lodging]}</span>${needAuth(r) ? '<span class="flag" title="Menor sem responsável legal: autorização assinada no dia">Autorização</span>' : ''}${anyHealth(r) ? '<span class="flag w" title="Há alergia, restrição, medicamento ou acessibilidade informados">Saúde</span>' : ''}${r.info && !r.info.imageConsent ? '<span class="flag" title="Não autorizou o uso de imagem">Sem imagem</span>' : ''}</div>
       <div class="c-meta"><span>${p.cpf ? 'CPF ' + fmtCpf(p.cpf) : 'Sem CPF'}</span><a href="https://wa.me/55${esc(p.phone)}" target="_blank" rel="noopener">${fmtPhone(p.phone)}</a></div>
     </div>
-    <div class="c-pay"><div><span>${methodLabel(r.payment)}</span>${r.payment.plan ? `<small class="${lateInst(r) ? 'late' : ''}">${r.payment.plan.filter(x => x.paid).length}/${r.payment.plan.length} pagas${nextInst(r) ? ' · próxima ' + fmtD(nextInst(r).due) + (lateInst(r) ? ' (atrasada)' : '') : ''}</small>` : ''}${r.payment.method === 'cartao' ? `<small>líquido ${brl(r.payment.subtotal)} · taxa ${brl(feeAmount(r.payment))} (maquininha)</small>` : ''}</div><b>${brl(r.payment.total)}</b></div>
+    <div class="c-pay"><div><span>${methodLabel(r.payment)}</span>${r.payment.plan ? `<small class="${lateInst(r) ? 'late' : ''}">${r.payment.plan.filter(x => x.paid).length}/${r.payment.plan.length} pagas${nextInst(r) ? ' · próxima ' + fmtD(nextInst(r).due) + (lateInst(r) ? ' (atrasada)' : '') : ''}</small>` : ''}${r.payment.method === 'cartao' ? `<small>líquido ${brl(r.payment.subtotal)} · taxa ${brl(feeAmount(r.payment))} (maquininha)</small>` : ''}${approval(r) ? `<small class="appr" title="Aprovado por ${esc(approval(r).by)}">✓ aprovado por ${esc(whoShort(approval(r).by))}</small>` : ''}</div><b>${brl(r.payment.total)}</b></div>
     <div class="card-a">${actionBtns(r)}<button class="btn light xs" data-det="${r.id}" type="button">Detalhes</button></div></article>`;
 }
 
@@ -430,13 +433,39 @@ function personBlock(p, i, hit) {
     <dt>Telefone</dt><dd><a href="https://wa.me/55${esc(p.phone)}" target="_blank" rel="noopener">${fmtPhone(p.phone)}</a></dd>
     <dt>Convidado por</dt><dd>${esc(p.district)}</dd>${healthRows(p)}</dl></div>`;
 }
+const ACT = { 'forma-alterada': 'Alterou a forma de pagamento', confirmada: 'Confirmou a inscrição', cancelada: 'Cancelou a inscrição', 'pre-cadastro': 'Voltou para pré-cadastro', 'parcela-paga': 'Marcou parcela como paga', 'parcela-desfeita': 'Desfez parcela' };
+const dt = iso => new Date(iso).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
+const approval = r => { if (r.status !== 'confirmada') return null; const l = (r.payment.log || []).filter(e => e.action === 'confirmada'); return l.length ? l[l.length - 1] : null; };
+const whoShort = by => String(by || '').split('@')[0];
+// Formulário para o admin trocar a forma de pagamento (só enquanto não há pagamento registrado)
+function changePay(r) {
+  const p = r.payment;
+  if (r.status === 'cancelada' || p.paid || (p.plan && p.plan.some(x => x.paid))) return '';
+  return `<div class="chg" data-chg="${r.id}"><div class="sec-t" style="margin-top:14px">Alterar forma de pagamento</div>
+    <div class="chg-r"><select id="chgM" aria-label="Forma de pagamento"><option value="pix">Pix (à vista)</option><option value="crediario">Crediário</option><option value="cartao">Cartão de crédito</option></select>
+    <select id="chgN" aria-label="Parcelas" hidden></select></div>
+    <small id="chgPrev" class="chg-p"></small>
+    <button class="btn light xs" type="button" data-chgsave="${r.id}">Salvar nova forma</button></div>`;
+}
+function chgFill(r) {
+  const m = $('#chgM').value, n = $('#chgN');
+  const opts = m === 'crediario' ? Array.from({ length: ((cfg.crediario && cfg.crediario.maxInstallments) || 3) - 1 }, (_, i) => i + 2) : m === 'cartao' ? Pricing.cardOptions(cfg) : [];
+  const keep = +n.value; n.innerHTML = opts.map(i => `<option value="${i}">${i}x</option>`).join('');
+  if (opts.includes(keep)) n.value = keep; n.hidden = !opts.length;
+  const c = Pricing.compute(r.participants, { method: m, installments: +n.value || 1, combo: !!r.payment.combo }, cfg);
+  $('#chgPrev').innerHTML = 'Novo valor: <b>' + brl(c.total) + '</b>' + (m === 'pix' ? '' : ' (' + c.installments + 'x de ' + brl(c.total / c.installments) + ')') + (c.discount ? ' · desconto de ' + brl(c.discount) : '');
+}
+function logBlock(r) {
+  const l = (r.payment.log || []).slice().reverse();
+  return l.length ? `<div class="sec-t" style="margin-top:14px">Histórico</div><div class="hist">${l.map(e => `<div><b>${esc(ACT[e.action] || e.action)}${e.detail ? ' · ' + esc(e.detail) : ''}</b><small>${esc(e.by)} · ${dt(e.at)}</small></div>`).join('')}</div>` : '';
+}
 function payBlock(r) {
-  const pay = r.payment, pl = pay.plan;
+  const pay = r.payment, pl = pay.plan, ap = approval(r);
   const kv = `<dl class="kv"><dt>Forma</dt><dd>${methodLabel(pay)}${pay.method === 'crediario' ? ' (uma parcela por mês)' : ''}</dd>
-    <dt>Subtotal</dt><dd>${brl(pay.subtotal)}</dd>${pay.discount ? `<dt>Desconto</dt><dd>${brl(pay.discount)}${pay.combo ? ' (combo familiar)' : ' (à vista)'}</dd>` : ''}${pay.feePercent ? `<dt>Taxa</dt><dd>${Number(pay.feePercent).toFixed(2).replace('.', ',')}%</dd>` : ''}
-    ${pay.method === 'cartao' ? `<dt>Taxa da maquininha</dt><dd>${brl(feeAmount(pay))} <small>(fica com a empresa da maquininha)</small></dd>` : ''}<dt>Total cobrado</dt><dd><b>${brl(pay.total)}</b></dd>${pay.method === 'cartao' ? `<dt>Líquido da organização</dt><dd><b>${brl(pay.subtotal)}</b></dd>` : ''}<dt>Pago</dt><dd>${pl ? pl.filter(x => x.paid).length + ' de ' + pl.length + ' parcelas' : (r.status === 'confirmada' ? 'Sim' : 'Não')}</dd></dl>`;
-  if (!pl) return kv;
-  return kv + `<div class="sec-t" style="margin-top:14px">Parcelas</div><div class="inst">${pl.map(x => {
+    ${pay.discount ? `<dt>Valor cheio</dt><dd>${brl(Math.round((pay.subtotal + pay.discount) * 100) / 100)}</dd><dt>Desconto</dt><dd>− ${brl(pay.discount)} <small>(${pay.combo ? 'combo familiar' : 'Pix à vista'}, ${Math.round(pay.discount / (pay.subtotal + pay.discount) * 100)}%)</small></dd>` : ''}<dt>${pay.discount ? 'Valor com desconto' : 'Subtotal'}</dt><dd>${brl(pay.subtotal)}</dd>${pay.feePercent ? `<dt>Taxa</dt><dd>${Number(pay.feePercent).toFixed(2).replace('.', ',')}%</dd>` : ''}
+    ${pay.method === 'cartao' ? `<dt>Taxa da maquininha</dt><dd>${brl(feeAmount(pay))} <small>(fica com a empresa da maquininha)</small></dd>` : ''}<dt>Total cobrado</dt><dd><b>${brl(pay.total)}</b></dd>${pay.method === 'cartao' ? `<dt>Líquido da organização</dt><dd><b>${brl(pay.subtotal)}</b></dd>` : ''}<dt>Pago</dt><dd>${pl ? pl.filter(x => x.paid).length + ' de ' + pl.length + ' parcelas' : (r.status === 'confirmada' ? 'Sim' : 'Não')}</dd>${ap ? `<dt>Aprovado por</dt><dd><b>${esc(ap.by)}</b> <small>em ${dt(ap.at)}</small></dd>` : ''}</dl>`;
+  if (!pl) return kv + logBlock(r);
+  return kv + logBlock(r) + `<div class="sec-t" style="margin-top:14px">Parcelas</div><div class="inst">${pl.map(x => {
     const late = !x.paid && x.due < today();
     return `<div class="it ${x.paid ? 'paid' : late ? 'late' : ''}"><div><b>Parcela ${x.n} · ${brl(x.amount)}</b><small>Vence ${fmtD(x.due)} · ${x.paid ? 'paga em ' + new Date(x.paidAt).toLocaleDateString('pt-BR') : late ? 'ATRASADA' : 'a vencer'}</small></div>
       ${r.status === 'cancelada' ? '' : `<button class="btn ${x.paid ? 'light' : 'green'} xs" data-inst="${r.id}" data-n="${x.n}" data-paid="${x.paid ? 0 : 1}" type="button">${x.paid ? 'Desfazer' : 'Marcar paga'}</button>`}</div>`;
@@ -465,9 +494,10 @@ function openDetails(id) {
     <div class="dlg-b">
       <div><div class="sec-t">Participantes (${r.participants.length})</div><div class="pl">${r.participants.map((p, i) => personBlock(p, i, false)).join('')}</div></div>
       <div><div class="sec-t">Responsável: emergência e saúde</div>${infoBlock(r)}</div>
-      <div><div class="sec-t">Pagamento</div>${payBlock(r)}</div>
+      <div><div class="sec-t">Pagamento</div>${payBlock(r)}${changePay(r)}</div>
     </div>
     <div class="dlg-a">${actionBtns(r)}<button class="btn light xs" type="button" data-close>Fechar</button></div>`;
+  if ($('#chgM')) { $('#chgM').value = r.payment.method; chgFill(r); if (r.payment.method !== 'pix') $('#chgN').value = r.payment.installments; chgFill(r); }
   $('#dlg').showModal();
 }
 
@@ -563,6 +593,20 @@ document.addEventListener('click', e => {
   if (nx) { const r = data.registrations.find(x => x.id === nx.dataset.nextinst), it = r && nextInst(r); if (it) { nx.disabled = true; setInstallment(r.id, it.n, true); } }
 });
 $('#dlg').addEventListener('click', e => { const b = e.target.closest('[data-act]'); if (b) changeStatus(b); });
+$('#dlg').addEventListener('change', e => {
+  if (!e.target.closest('.chg')) return;
+  const r = data.registrations.find(x => x.id === e.target.closest('.chg').dataset.chg); if (r) chgFill(r);
+});
+$('#dlg').addEventListener('click', async e => {
+  const b = e.target.closest('[data-chgsave]'); if (!b) return;
+  const m = $('#chgM').value, n = +$('#chgN').value || 1, label = m === 'pix' ? 'Pix (à vista)' : (m === 'crediario' ? 'Crediário ' : 'Cartão ') + n + 'x';
+  if (!confirm('Alterar a forma de pagamento para ' + label + '?\n' + $('#chgPrev').innerText)) return;
+  b.disabled = true;
+  const r = await api('/api/admin/payment-method', { method: 'POST', body: JSON.stringify({ id: b.dataset.chgsave, method: m, installments: n }) });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) { b.disabled = false; return toast(j.error || 'Não foi possível alterar.'); }
+  await load(); toast('Forma de pagamento alterada'); openDetails(b.dataset.chgsave);
+});
 $('#vdlg').addEventListener('click', e => { const b = e.target.closest('[data-act]'); if (b) changeStatus(b); });
 $('#list').addEventListener('click', async e => {
   const b = e.target.closest('[data-act]'); if (!b) return;

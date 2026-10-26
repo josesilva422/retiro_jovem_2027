@@ -15,6 +15,9 @@
     return b === 'gratis' ? 0 : b === 'meia' ? r2(base / 2) : base;
   };
 
+  // Telefone só com dígitos, sem o DDI 55 (o autopreenchimento do navegador manda +55...). Com 12 ou 13 dígitos e começando em 55, remove o 55.
+  const phoneDigits = v => { let d = String(v == null ? '' : v).replace(/\D/g, ''); if (d.length >= 12 && d.startsWith('55')) d = d.slice(2); return d; };
+
   // Desconto (Pix à vista ou combo familiar): porcentagem sobre o valor total da inscrição.
   const discountPercent = cfg => (Number.isFinite(Number(cfg.discountPercent)) ? Number(cfg.discountPercent) : 10);
 
@@ -103,6 +106,15 @@
     reg.payment.paid = paid === pl.length;
     return reg;
   }
+  // Auditoria: quem confirmou, cancelou ou marcou parcela (últimos 40 eventos em payment.log).
+  function logEvent(payment, by, action, detail) {
+    const log = Array.isArray(payment.log) ? payment.log : [];
+    log.push({ at: new Date().toISOString(), by: String(by || 'não identificado').slice(0, 120), action, ...(detail ? { detail: String(detail).slice(0, 120) } : {}) });
+    payment.log = log.slice(-40);
+    return payment;
+  }
+  // Último evento de confirmação (quem aprovou a inscrição).
+  const approvedBy = payment => { const l = (payment && payment.log) || []; for (let i = l.length - 1; i >= 0; i--) if (l[i].action === 'confirmada') return l[i]; return null; };
   const planInfo = payment => {
     const pl = payment && payment.plan; if (!pl) return null;
     const next = pl.find(x => !x.paid);
@@ -129,7 +141,7 @@
 
   function checkInfo(info, participants) {
     info = info || {};
-    const em = info.emergency || {}, name = cl(em.name, 80), phone = String(em.phone || '').replace(/\D/g, ''), relation = cl(em.relation, 40);
+    const em = info.emergency || {}, name = cl(em.name, 80), phone = phoneDigits(em.phone), relation = cl(em.relation, 40);
     if (name.length < 3) return { error: 'Informe o nome do contato de emergência.' };
     if (phone.length < 10 || phone.length > 11) return { error: 'Informe um telefone válido para o contato de emergência.' };
     if (info.imageConsent !== true) return { error: 'A autorização de uso de imagem é necessária para concluir a inscrição.' };
@@ -147,5 +159,5 @@
     return { value: { emergency: { name, phone, relation }, imageConsent: info.imageConsent === true, minors: { any: anyMinor, accompanied, authorizationRequired: required, authorizationAck: ack } } };
   }
 
-  return { compute, quote, plan, syncPlan, planInfo, checkInfo, checkHealth, cardOptions, band, crediarioOpen, cardAllowed, discountPercent };
+  return { compute, quote, plan, syncPlan, planInfo, checkInfo, checkHealth, cardOptions, band, crediarioOpen, cardAllowed, discountPercent, logEvent, approvedBy, phoneDigits };
 });

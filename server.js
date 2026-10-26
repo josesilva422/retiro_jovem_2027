@@ -73,7 +73,7 @@ const clean = (v, max = 120) => String(v ?? '').replace(/[<>]/g, '').trim().slic
 function validatePerson(p, cfg) {
   const out = {
     name: clean(p.name), age: parseInt(p.age, 10), cpf: String(p.cpf || '').replace(/\D/g, ''),
-    phone: String(p.phone || '').replace(/\D/g, ''), district: clean(p.district, 80), lodging: p.lodging
+    phone: Pricing.phoneDigits(p.phone), district: clean(p.district, 80), lodging: p.lodging
   };
   if (out.name.split(/\s+/).length < 2) return { error: 'Informe o nome completo.' };
   if (!(out.age >= 0 && out.age <= 99)) return { error: `Idade inválida para ${out.name}.` };
@@ -232,7 +232,25 @@ async function handleApi(req, res, url) {
         if (b.status === 'confirmada') return send(res, 400, { error: 'Este pagamento é parcelado: marque as parcelas como pagas.' });
         r.status = b.status; Pricing.syncPlan(r);
       } else { r.status = b.status; r.payment.paid = b.status === 'confirmada'; }
+      Pricing.logEvent(r.payment, 'painel local', b.status);
       writeJson(REG_FILE, regs);
+      return send(res, 200, { ok: true });
+    }
+
+    if (req.method === 'POST' && url.pathname === '/api/admin/payment-method') {
+      const b = await readBody(req);
+      const regs = readJson(REG_FILE), r = regs.find(x => x.id === b.id);
+      if (!r) return send(res, 404, { error: 'Inscrição não encontrada.' });
+      if (r.status === 'cancelada') return send(res, 409, { error: 'Esta inscrição está cancelada.' });
+      if (r.payment.paid || (r.payment.plan && r.payment.plan.some(x => x.paid))) return send(res, 409, { error: 'Já existe pagamento registrado nesta inscrição. Desfaça os pagamentos antes de trocar a forma.' });
+      const q = Pricing.quote(r.participants, { method: b.method, installments: b.installments, combo: !!r.payment.combo }, cfg);
+      if (q.error) return send(res, 400, { error: q.error });
+      const c = q.calc, label = p => p.method === 'pix' ? 'Pix' : p.method === 'crediario' ? 'Crediário ' + p.installments + 'x' : 'Cartão ' + p.installments + 'x';
+      const old = r.payment, payment = { ...old, method: c.method, installments: c.installments, feePercent: c.fee, subtotal: c.subtotal, discount: c.discount, combo: c.comboOk, total: c.total, paid: false };
+      delete payment.plan; delete payment.checkoutUrl;
+      const pl = Pricing.plan(c, new Date().toISOString()); if (pl) payment.plan = pl;
+      Pricing.logEvent(payment, 'painel local', 'forma-alterada', label(old) + ' → ' + label(payment));
+      r.payment = payment; writeJson(REG_FILE, regs);
       return send(res, 200, { ok: true });
     }
 
@@ -243,8 +261,11 @@ async function handleApi(req, res, url) {
       const r = regs.find(x => x.id === b.id);
       const it = r && r.payment.plan && r.payment.plan[parseInt(b.n, 10) - 1];
       if (!it) return send(res, 404, { error: 'Parcela não encontrada.' });
+      const before = r.status;
       it.paid = !!b.paid; it.paidAt = it.paid ? new Date().toISOString() : null;
       Pricing.syncPlan(r);
+      Pricing.logEvent(r.payment, 'painel local', it.paid ? 'parcela-paga' : 'parcela-desfeita', 'Parcela ' + it.n);
+      if (r.status !== before) Pricing.logEvent(r.payment, 'painel local', r.status);
       writeJson(REG_FILE, regs);
       return send(res, 200, { ok: true, status: r.status });
     }
