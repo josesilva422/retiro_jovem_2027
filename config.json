@@ -50,10 +50,7 @@
       "pixHolder": "Kaio Pereira"
     }
   ],
-  "discountPrices": {
-    "camping": 200,
-    "dormitorio": 220
-  },
+  "discountPercent": 10,
   "maxInstallments": 12,
   "combo": {
     "minParticipants": 3

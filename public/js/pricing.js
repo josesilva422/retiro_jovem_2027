@@ -15,6 +15,9 @@
     return b === 'gratis' ? 0 : b === 'meia' ? r2(base / 2) : base;
   };
 
+  // Desconto (Pix à vista ou combo familiar): porcentagem sobre o valor total da inscrição.
+  const discountPercent = cfg => (Number.isFinite(Number(cfg.discountPercent)) ? Number(cfg.discountPercent) : 10);
+
   const crediarioOpen = (cfg, now) => {
     const c = cfg.crediario || {};
     if (!c.enabled) return false;
@@ -47,10 +50,10 @@
     const comboOk = !!payment.combo && participants.length >= minPeople;     // combo familiar
     const avista = method === 'pix';
     const discounted = avista || comboOk;                                   // o desconto não acumula
-    const table = discounted ? (cfg.discountPrices || cfg.prices) : cfg.prices;
-    const lines = participants.map(p => ({ band: band(p.age), lodging: p.lodging, full: unit(p, cfg.prices), price: unit(p, table) }));
+    const pct = discountPercent(cfg);
+    const lines = participants.map(p => { const full = unit(p, cfg.prices); return { band: band(p.age), lodging: p.lodging, full, price: discounted ? r2(full * (1 - pct / 100)) : full }; });
     const listTotal = r2(lines.reduce((s, l) => s + l.full, 0));
-    const subtotal = r2(lines.reduce((s, l) => s + l.price, 0));
+    const subtotal = discounted ? r2(listTotal * (1 - pct / 100)) : listTotal;   // o desconto é de pct% sobre o valor total
     const fee = method === 'cartao' ? Number(cfg.installmentFees && cfg.installmentFees[String(n)]) || 0 : 0;
     const total = r2(fee > 0 ? subtotal / (1 - fee / 100) : subtotal);   // por dentro: a taxa da maquininha sai do total e a organização fica com o subtotal
     return { method, installments: n, payers, comboOk, minPeople, avista, discounted, lines, listTotal, subtotal, discount: r2(listTotal - subtotal), fee, total, min: lim.min, max: lim.max };
@@ -144,5 +147,5 @@
     return { value: { emergency: { name, phone, relation }, imageConsent: info.imageConsent === true, minors: { any: anyMinor, accompanied, authorizationRequired: required, authorizationAck: ack } } };
   }
 
-  return { compute, quote, plan, syncPlan, planInfo, checkInfo, checkHealth, cardOptions, band, crediarioOpen, cardAllowed };
+  return { compute, quote, plan, syncPlan, planInfo, checkInfo, checkHealth, cardOptions, band, crediarioOpen, cardAllowed, discountPercent };
 });

@@ -153,7 +153,7 @@
   const minPeople = cfg.combo?.minParticipants || 3;
   const priceBox = $('#priceBox');
   if (priceBox) {
-    const dp = cfg.discountPrices || cfg.prices;
+    const dpct = Pricing.discountPercent(cfg), dp = Object.fromEntries(Object.keys(cfg.prices).map(k => [k, Math.round(cfg.prices[k] * (1 - dpct / 100) * 100) / 100]));
     priceBox.innerHTML = `<h3>Valores da inscrição</h3>
       <div class="price-grid">${['dormitorio', 'camping'].map(k => `<div class="pcard"><span class="pico">${ICON[k]}</span><b>${LODGE[k]}</b><div class="pv">${brl(cfg.prices[k])}</div><small>À vista: <b>${brl(dp[k])}</b> (10% de desconto)</small></div>`).join('')}</div>
       <ul class="rules">
