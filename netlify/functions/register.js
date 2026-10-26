@@ -63,7 +63,7 @@ exports.handler = async event => {
         if (calc.method === 'cartao' && ip.enabled()) {
           try { payUrl = (await ip.ensureLink(protocol)).url || null; } catch (e) { console.error('register: link do cartão:', e.message); }
         }
-        return json(201, { ok: true, payUrl, protocol, total: calc.total, installments: calc.installments, method: calc.method, combo: calc.comboOk, plan: payment.plan || null, authorization: inf.value.minors.authorizationRequired, status: 'pre-cadastro' });
+        return json(201, { ok: true, payUrl, protocol, subtotal: calc.subtotal, total: calc.total, installments: calc.installments, method: calc.method, combo: calc.comboOk, plan: payment.plan || null, authorization: inf.value.minors.authorizationRequired, status: 'pre-cadastro' });
       }
       if (ins.status !== 409) throw new Error('db');
     }

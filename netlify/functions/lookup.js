@@ -26,6 +26,7 @@ exports.handler = async event => {
     return json(200, {
       found: true, protocol: reg.protocol, status: reg.status, createdAt: reg.created_at,
       payable: ip.enabled() && reg.payment.method === 'cartao' && !reg.payment.paid && reg.status === 'pre-cadastro',
+      base: reg.payment.subtotal,
       total: reg.payment.total, method: reg.payment.method, installments: reg.payment.installments, plan: loadPricing().planInfo(reg.payment),
       participants: reg.participants.map(p => ({ name: short(p.name), lodging: p.lodging, district: p.district, cpf: mask(p.cpf), matched: cpf ? p.cpf === cpf : false }))
     });

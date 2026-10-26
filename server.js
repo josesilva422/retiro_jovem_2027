@@ -93,7 +93,7 @@ function publicView(reg, cpf) {
   const mask = c => (c ? '•••.•••.•••-' + c.slice(-2) : 'sem CPF');
   return {
     found: true, protocol: reg.protocol, status: reg.status, createdAt: reg.createdAt,
-    total: reg.payment.total, method: reg.payment.method, installments: reg.payment.installments, plan: Pricing.planInfo(reg.payment),
+    base: reg.payment.subtotal, total: reg.payment.total, method: reg.payment.method, installments: reg.payment.installments, plan: Pricing.planInfo(reg.payment),
     participants: reg.participants.map(p => ({ name: short(p.name), lodging: p.lodging, district: p.district, cpf: mask(p.cpf), matched: cpf ? p.cpf === cpf : false }))
   };
 }
@@ -182,7 +182,7 @@ async function handleApi(req, res, url) {
     if (pl) reg.payment.plan = pl;
     regs.push(reg);
     writeJson(REG_FILE, regs);
-    return send(res, 201, { ok: true, protocol: reg.protocol, total: calc.total, installments: calc.installments, method: calc.method, combo: calc.comboOk, plan: reg.payment.plan || null, authorization: inf.value.minors.authorizationRequired, status: reg.status });
+    return send(res, 201, { ok: true, protocol: reg.protocol, subtotal: calc.subtotal, total: calc.total, installments: calc.installments, method: calc.method, combo: calc.comboOk, plan: reg.payment.plan || null, authorization: inf.value.minors.authorizationRequired, status: reg.status });
   }
 
   // ---------- Consulta pública (por protocolo ou CPF) ----------
