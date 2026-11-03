@@ -150,6 +150,12 @@ dialog{margin:auto;border:3px solid var(--k);box-shadow:9px 9px 0 var(--k);paddi
 .uitem{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 0;border-bottom:2px solid #d9d2c1;flex-wrap:wrap}.uitem span{word-break:break-all;font-weight:700}.uitem small{display:block;font-weight:600;color:#44546e}.uform{display:grid;gap:8px;margin-top:14px}.uform input{min-height:44px;padding:8px 10px;border:3px solid var(--k);background:#fff;font:600 1rem var(--txt)}#umsg{min-height:1.2em;font-weight:700}.uhint{display:block;margin-top:8px;color:#44546e}
 .hist{display:grid;gap:6px}.hist>div{padding:6px 8px;background:#fff;border:2px solid #d9d2c1}.hist small{display:block;color:#44546e;font-weight:600}.appr{color:var(--leaf);font-weight:800}
 .chg-r{display:flex;gap:8px;flex-wrap:wrap}.chg select{min-height:40px;padding:6px 8px;border:3px solid var(--k);background:#fff;font:600 .9rem var(--txt)}.chg-p{display:block;margin:8px 0;color:#44546e}
+.pager{display:flex;align-items:center;justify-content:center;gap:18px;margin:32px 0 8px}
+.pager[hidden]{display:none}
+.pg-b{width:52px;height:52px;border:3px solid var(--k);background:var(--k);color:var(--y);font-size:1.1rem;box-shadow:4px 4px 0 var(--o);cursor:pointer;transition:transform .12s,box-shadow .12s}
+.pg-b:hover:not(:disabled){transform:translate(2px,2px);box-shadow:2px 2px 0 var(--o)}
+.pg-b:disabled{background:#fff;color:#9aa5b8;box-shadow:none;cursor:not-allowed}
+.pg-i{font:700 .95rem var(--txt);color:var(--k)}
 dialog::backdrop{background:rgba(10,31,64,.62)}
 .dlg-h{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 16px;background:var(--n);color:#fff;position:sticky;top:0}
 .dlg-h .proto{font-size:1.6rem}
@@ -249,6 +255,7 @@ dialog::backdrop{background:rgba(10,31,64,.62)}
   </section>
 
   <section class="list" id="list" aria-live="polite"></section>
+  <nav class="pager" id="pager" aria-label="Páginas" hidden></nav>
 </main>
 
 <dialog id="dlg" aria-label="Detalhes da inscrição"><div id="dlgBody"></div></dialog>
@@ -384,8 +391,29 @@ function render() {
   const active = F.status !== 'todas' || F.lodge || F.dist || q;
   $('#result').innerHTML = `${rows.length} inscrição(ões) · ${nPeople} pessoa(s)` + (active ? ' · <button type="button" class="btn light xs clear" id="clear">Limpar filtros</button>' : '');
 
-  $('#list').innerHTML = rows.length ? rows.map(x => card(x.r, x.shown)).join('')
+  // Paginação: os filtros e a busca valem para todas as inscrições; só a exibição é dividida em páginas
+  const pages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
+  page = Math.min(Math.max(page, 1), pages);
+  const from = (page - 1) * PAGE_SIZE, slice = rows.slice(from, from + PAGE_SIZE);
+  if (pages > 1) $('#result').innerHTML += ` · exibindo ${from + 1}–${from + slice.length}`;
+  $('#list').innerHTML = rows.length ? slice.map(x => card(x.r, x.shown)).join('')
     : `<div class="empty">${R.length ? 'Nenhuma inscrição encontrada com esses filtros.' : 'Ainda não há inscrições. Assim que alguém se cadastrar, aparece aqui.'}</div>`;
+  renderPager(pages);
+}
+
+const PAGE_SIZE = 12;
+let page = 1;
+function renderPager(pages) {
+  const el = $('#pager');
+  el.hidden = pages <= 1;
+  if (pages <= 1) { el.innerHTML = ''; return; }
+  el.innerHTML = `<button type="button" class="pg-b" data-pg="${page - 1}" ${page <= 1 ? 'disabled' : ''} aria-label="Página anterior">&#9664;</button>
+    <span class="pg-i">Página <b>${page}</b> de <b>${pages}</b></span>
+    <button type="button" class="pg-b" data-pg="${page + 1}" ${page >= pages ? 'disabled' : ''} aria-label="Próxima página">&#9654;</button>`;
+}
+function goPage(n) {
+  page = n; render();
+  $('#result').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 // A taxa da maquininha fica com a empresa da maquininha: para a organização conta só o subtotal.
@@ -535,11 +563,13 @@ $('#loginForm').addEventListener('submit', async e => {
 $('#showPw').onclick = () => { const i = $('#pw'), s = i.type === 'password'; i.type = s ? 'text' : 'password'; $('#showPw').textContent = s ? 'Ocultar' : 'Mostrar'; $('#showPw').setAttribute('aria-pressed', s); };
 $('#logout').onclick = () => { saveS(null); location.reload(); };
 $('#reload').onclick = () => load(true);
-$('#q').addEventListener('input', () => data && render());
+$('#q').addEventListener('input', () => { page = 1; data && render(); });
 $('#app').addEventListener('click', e => {
+  const pg = e.target.closest('[data-pg]');
+  if (pg && !pg.disabled) return goPage(+pg.dataset.pg);
   const c = e.target.closest('.chip');
-  if (c) { const g = c.dataset.g, k = c.dataset.k; F[g] = g === 'status' ? k : (F[g] === k ? null : k); return render(); }
-  if (e.target.closest('#clear')) { F.status = 'todas'; F.lodge = F.dist = null; $('#q').value = ''; render(); }
+  if (c) { const g = c.dataset.g, k = c.dataset.k; F[g] = g === 'status' ? k : (F[g] === k ? null : k); page = 1; return render(); }
+  if (e.target.closest('#clear')) { F.status = 'todas'; F.lodge = F.dist = null; $('#q').value = ''; page = 1; render(); }
 });
 async function loadUsers() {
   const box = $('#ulist'); box.innerHTML = '<small>Carregando...</small>';
