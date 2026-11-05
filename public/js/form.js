@@ -330,7 +330,7 @@
     const how = j.method === 'pix' ? 'Pix (à vista)' : j.method === 'crediario' ? `crediário em ${j.installments}x (uma parcela por mês)` : `cartão de crédito em ${j.installments}x`;
     const auth = j.authorization ? `<div class="planbox"><b>Autorização dos responsáveis</b><small>Leve a autorização assinada no dia do retiro. <a href="/autorizacao.html?protocolo=${encodeURIComponent(j.protocol)}&menores=${encodeURIComponent(window.__minors || '')}" target="_blank" rel="noopener"><b>Baixar o modelo (já com seu protocolo)</b></a></small></div>` : '';
     const plan = j.plan ? `<div class="planbox"><b>Parcelas</b>${j.plan.map(x => `<div class="row"><span>Parcela ${x.n} · ${fmtDate(x.due)}</span><span>${brl(x.amount)}</span></div>`).join('')}<small>As parcelas são acompanhadas pela organização. Combine a primeira com uma das pessoas abaixo.</small></div>` : '';
-    const payBtn = j.payUrl ? `<a class="btn paynow" href="${esc(j.payUrl)}" rel="noopener">Finalizar pagamento</a><small class="paynow-s">Você será levado à página segura da InfinitePay e escolhe as parcelas lá. Ao concluir, a inscrição é confirmada automaticamente.</small>` : '';
+    const payBtn = j.payUrl ? `<a class="btn paynow" href="${esc(j.payUrl)}" rel="noopener">Finalizar pagamento</a><small class="paynow-s">${j.method === 'pix' ? 'Você será levado à página segura da InfinitePay. <b>Escolha Pix</b> para manter o desconto de 10%: pagando no cartão por esse link, a inscrição não é confirmada com o desconto. Ao pagar o Pix, a inscrição é confirmada automaticamente.' : 'Você será levado à página segura da InfinitePay e escolhe as parcelas lá. Ao concluir, a inscrição é confirmada automaticamente.'}</small>` : '';
     $('#payInstr').innerHTML = `<b>Próximo passo: realizar o pagamento</b><br>${payBtn}${j.method === 'cartao' && j.subtotal != null ? 'Valor das inscrições: <b>' + brl(j.subtotal) + '</b> (os juros do parcelamento são somados na página de pagamento; com ' + j.installments + 'x fica em torno de ' + valor + ') · ' : (valor ? 'Valor: <b>' + valor + '</b> · ' : '')}Forma escolhida: ${how}<br>${plan}${auth}
       Entre em contato com uma destas pessoas e informe o protocolo <b>${j.protocol}</b>:
       ${payTip}<div class="contacts">${contactCards(mine, true)}</div>`;
@@ -352,22 +352,16 @@
   }
 })();
 
-// ---------- Aviso de últimas vagas ----------
+// ---------- Aviso "as vagas estão acabando" (sem números; o cadastro nunca é bloqueado) ----------
 (() => {
-  const esc = t => String(t == null ? '' : t).replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
-  Promise.all([fetch('/api/vagas').then(r => r.json()), fetch('/api/config').then(r => r.json())]).then(([v, cfg]) => {
-    const form = document.getElementById('regForm');
-    if (!v || !v.total || v.remaining == null || v.remaining > (v.warnAt || 20)) return;
+  fetch('/api/vagas').then(r => r.json()).then(v => {
+    if (!v || !v.warn) return;
     const box = document.getElementById('vagasBox'), fl = document.getElementById('vagasFloat');
-    const out = v.remaining <= 0;
-    const txt = out ? 'VAGAS ESGOTADAS' : v.remaining === 1 ? 'ÚLTIMA VAGA!' : 'ÚLTIMAS ' + v.remaining + ' VAGAS!';
     if (box) {
-      box.className = 'vagas-box on' + (out ? ' out' : '');
-      const who = (cfg.contacts || []).map(c => '<a class="vg-contact" href="https://wa.me/' + esc(c.whatsapp) + '" target="_blank" rel="noopener"><small>' + esc(c.district) + '</small><b>' + esc(c.name) + '</b><span>' + esc(c.display) + '</span></a>').join('');
-      box.innerHTML = '<b>' + txt + '</b><span>' + (out ? 'Todas as ' + v.total + ' vagas foram confirmadas. Para saber sobre lista de espera ou desistências, fale com o responsável do seu distrito:' : 'Restam apenas ' + v.remaining + ' de ' + v.total + ' vagas. Garanta a sua agora!') + '</span>' + (out ? '<div class="vg-contacts">' + who + '</div>' : '') + '<i style="width:' + Math.min(100, Math.round(v.taken / v.total * 100)) + '%"></i>';
+      box.className = 'vagas-box on';
+      box.innerHTML = '<b>AS VAGAS ESTÃO ACABANDO!</b><span>Garanta a sua inscrição agora.</span>';
       box.hidden = false;
     }
-    if (out) { form.hidden = true; const pn = document.getElementById('payNote'); if (pn) pn.hidden = true; }
-    if (fl && !out) { fl.textContent = '🔥 Restam só ' + v.remaining + ' vagas · Inscreva-se'; fl.hidden = false; }
+    if (fl) { fl.textContent = '🔥 As vagas estão acabando · Inscreva-se'; fl.hidden = false; }
   }).catch(() => {});
 })();

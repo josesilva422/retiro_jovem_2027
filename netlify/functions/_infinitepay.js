@@ -48,7 +48,7 @@ async function ensureLink(protocol) {
   if (!g.ok || !g.data.length) return { error: 'Inscrição não encontrada.', status: 404 };
   const reg = g.data[0], p = reg.payment;
   if (reg.status === 'cancelada') return { error: 'Esta inscrição foi cancelada.', status: 409 };
-  if (p.method !== 'cartao') return { error: 'Esta inscrição não é de pagamento no cartão.', status: 409 };
+  if (p.method !== 'cartao' && p.method !== 'pix') return { error: 'Esta inscrição não tem pagamento online (Pix ou cartão).', status: 409 };
   if (p.paid) return { error: 'Esta inscrição já está paga.', status: 409 };
   if (p.checkoutUrl) return { url: p.checkoutUrl };
   const url = await createLink(reg);

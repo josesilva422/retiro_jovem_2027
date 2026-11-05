@@ -22,8 +22,14 @@ exports.handler = async event => {
     if (c.data.paid !== true) return json(200, { ok: true, paid: false });
     if (c.data.amount !== ip.cents(p.subtotal)) { console.error('infinitepay: valor diferente', protocol, c.data.amount, ip.cents(p.subtotal)); return json(200, { ok: true, ignored: 'amount' }); }
 
+    if (p.method === 'pix' && c.data.capture_method !== 'pix') {   // pagou no cartão um link de Pix: não confirma sozinho
+      const alt = { ...p }; loadPricing().logEvent(alt, 'InfinitePay (automático)', 'pagamento-divergente', 'Inscrição de Pix paga no cartão (' + (c.data.installments || 1) + 'x). Conferir e cobrar a diferença ou estornar.');
+      await sb(`registrations?id=eq.${reg.id}`, { method: 'PATCH', prefer: 'return=minimal', body: { payment: alt } });
+      return json(200, { ok: true, ignored: 'method' });
+    }
+
     const payment = { ...p, paid: true, paidAt: new Date().toISOString(), gateway: 'infinitepay', transactionNsu: b.transaction_nsu, paidAmount: c.data.paid_amount / 100, paidInstallments: c.data.installments, receiptUrl: typeof b.receipt_url === 'string' ? b.receipt_url : undefined };
-    if (reg.status !== 'cancelada') loadPricing().logEvent(payment, 'InfinitePay (automático)', 'confirmada', 'Pagamento aprovado no cartão');
+    if (reg.status !== 'cancelada') loadPricing().logEvent(payment, 'InfinitePay (automático)', 'confirmada', p.method === 'pix' ? 'Pagamento aprovado por Pix' : 'Pagamento aprovado no cartão');
     const up = await sb(`registrations?id=eq.${reg.id}`, { method: 'PATCH', prefer: 'return=minimal', body: { status: reg.status === 'cancelada' ? 'cancelada' : 'confirmada', payment } });
     if (!up.ok) throw new Error('db');
     return json(200, { ok: true });

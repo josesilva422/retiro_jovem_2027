@@ -79,6 +79,7 @@
   ],
   "capacity": {
     "total": 250,
-    "warnAt": 20
+    "perDistrict": 125,
+    "warnRemaining": 50
   }
 }

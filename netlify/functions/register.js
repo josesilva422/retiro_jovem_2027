@@ -31,16 +31,6 @@ exports.handler = async event => {
     if (q.error) return json(400, { error: q.error });
     const { calc } = q;
 
-    // Limite de vagas
-    const total = (cfg.capacity && cfg.capacity.total) || 0;
-    if (total) {
-      const occ = await sb('registrations?select=participants&status=eq.confirmada');
-      if (!occ.ok) throw new Error('db');
-      const left = total - occ.data.reduce((s, x) => s + x.participants.length, 0);
-      if (left <= 0) return json(409, { error: 'As vagas do retiro esgotaram. Fale com o responsável do seu distrito.' });
-      if (participants.length > left) return json(409, { error: `Restam apenas ${left} vaga${left > 1 ? 's' : ''}. Reduza o número de participantes ou fale com o responsável do seu distrito.` });
-    }
-
     // CPF já inscrito (ignora inscrições canceladas)
     const dup = await sb(`registrations?select=participants&status=neq.cancelada&cpfs=ov.{${cpfs.join(',')}}`);
     if (!dup.ok) throw new Error('db');
@@ -60,7 +50,7 @@ exports.handler = async event => {
       const ins = await sb('registrations', { method: 'POST', prefer: 'return=minimal', body: { protocol, status: 'pre-cadastro', participants, cpfs, payment, info: inf.value } });
       if (ins.ok) {
         let payUrl = null;
-        if (calc.method === 'cartao' && ip.enabled()) {
+        if ((calc.method === 'cartao' || calc.method === 'pix') && ip.enabled()) {
           try { payUrl = (await ip.ensureLink(protocol)).url || null; } catch (e) { console.error('register: link do cartão:', e.message); }
         }
         return json(201, { ok: true, payUrl, protocol, subtotal: calc.subtotal, total: calc.total, installments: calc.installments, method: calc.method, combo: calc.comboOk, plan: payment.plan || null, authorization: inf.value.minors.authorizationRequired, status: 'pre-cadastro' });

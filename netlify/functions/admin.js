@@ -89,7 +89,7 @@ exports.handler = async event => {
     if (event.httpMethod === 'GET' && action === 'data') {
       const r = await sb('registrations?select=*&order=created_at.asc');
       if (!r.ok) throw new Error('db');
-      return json(200, { registrations: r.data.map(toApi), waitlist: [], registrationOpen: loadConfig().registrationOpen });
+      return json(200, { registrations: r.data.map(toApi), waitlist: [], registrationOpen: loadConfig().registrationOpen, capacity: loadConfig().capacity || null });
     }
 
     if (event.httpMethod === 'POST' && action === 'status') {

@@ -49,7 +49,7 @@ Publicação: cada **push na branch `main`** do GitHub dispara um deploy automá
 │   ├── lookup.js               POST /api/lookup     (consulta pública)
 │   ├── config.js               GET  /api/config     (config pública)
 │   ├── vagas.js                GET  /api/vagas      (contador de vagas)
-│   ├── pay.js                  POST /api/pay        (link de pagamento no cartão)
+│   ├── pay.js                  POST /api/pay        (link de pagamento: Pix ou cartão)
 │   ├── infinitepay-webhook.js  POST /api/infinitepay-webhook
 │   └── admin.js                /api/admin/*         (painel)
 └── public/
@@ -87,7 +87,7 @@ Arquivo único com as regras. Para alterar, edite e publique (push).
 | `crediario` | `{ enabled, maxInstallments, until }`: parcelamento mensal controlado pelo painel (`until` = data limite; `null` = sem limite). |
 | `districts` | Opções de "Convidado por". |
 | `contacts` | Responsável de cada distrito: nome, WhatsApp, chave Pix e titular. Usado no pagamento e no rodapé "Dúvidas". |
-| `capacity` | `{ total, warnAt }`: limite de vagas (250) e quando mostrar o aviso de últimas vagas (20). |
+| `capacity` | `{ total, perDistrict, warnRemaining }`: 250 pessoas confirmadas (125 por distrito), só visível no painel; `warnRemaining` (50) é quando o site avisa que as vagas estão acabando. |
 | `pix` | Reservado (`key`, `holder`); hoje o Pix usa as chaves de cada distrito em `contacts`. |
 
 O texto da programação, local, novidades e fotos fica em `public/js/content.js`.
@@ -111,10 +111,10 @@ O texto da programação, local, novidades e fotos fica em `public/js/content.js
 - No cartão pelo link da InfinitePay, o aviso de pagamento confirma sozinho.
 
 ### 4.3 Vagas
-- Limite em `capacity.total` (250). **Só inscrições `confirmada` ocupam vaga**; cada participante conta 1.
-- `GET /api/vagas` devolve `{ total, taken, remaining, warnAt }`.
-- Quando `remaining ≤ warnAt` o site mostra um aviso chamativo (quadro e botão flutuante). Quando chega a 0: "Vagas esgotadas", com os contatos dos responsáveis, e o formulário some. O servidor também recusa novas inscrições (`409`).
-- Pré-cadastros não reservam vaga; quem confirma depois do limite precisa ser tratado no painel.
+- **Limite:** 250 pessoas confirmadas (125 por distrito), em `capacity` (`total`, `perDistrict`). Cada participante conta 1, incluindo crianças. **Só inscrições `confirmada` ocupam vaga**; pré-cadastro não conta.
+- **O limite só aparece no painel admin.** O cartão **Pessoas confirmadas** mostra "N de 250" e, por distrito, "Veiga Jardim N/125 · Garavelo N/125". Com filtro de distrito mostra "de 125"; com filtro de acomodação mostra só a quantidade. Passando do limite o número fica vermelho. A configuração pública (`/api/config`) não traz o limite.
+- **Sem trava automática:** o cadastro nunca é bloqueado pelo limite. Quem decide é a equipe, pelo painel.
+- **Aviso aos usuários:** quando faltam 50 pessoas confirmadas (`capacity.warnRemaining`) ou menos, o site mostra "As vagas estão acabando!" (quadro e botão flutuante), sem números. `GET /api/vagas` devolve apenas `{ warn: true|false }`.
 
 ### 4.4 Dados coletados
 - **Todos os participantes:** nome completo, idade, CPF (opcional para menores de 18 com "sem CPF"), telefone, "Convidado por", acomodação, e quatro perguntas de saúde (alergia, restrição alimentar, medicamento controlado, acessibilidade).
@@ -155,9 +155,9 @@ Todas as rotas `/api/*` são redirecionadas pelo `netlify.toml` para as funçõe
 |---|---|---|
 | `/api/config` | GET | Configuração pública (sem a chave Pix global). Cache de 60 s. |
 | `/api/vagas` | GET | Contador de vagas. Cache de 20 s. |
-| `/api/register` | POST | Valida e grava a inscrição. Devolve protocolo, total e (cartão) `payUrl`. |
+| `/api/register` | POST | Valida e grava a inscrição. Devolve protocolo, total e (Pix ou cartão) `payUrl`. |
 | `/api/lookup` | POST | Consulta por protocolo (`RC-XXXXXX`) ou CPF. Devolve nomes abreviados e CPF mascarado; espera de 300 ms por consulta. |
-| `/api/pay` | POST | Devolve o link de pagamento no cartão de uma inscrição (por protocolo). |
+| `/api/pay` | POST | Devolve o link de pagamento (Pix ou cartão) de uma inscrição (por protocolo). |
 | `/api/infinitepay-webhook` | POST | Aviso de pagamento aprovado da InfinitePay. |
 
 `/api/register` valida no servidor: de 1 a 15 participantes, nome completo, CPF válido e sem repetição, telefone, "Convidado por" permitido, acomodação, saúde, contato de emergência, imagem, menores, forma de pagamento, limite de vagas e CPF já inscrito (ignora canceladas).
@@ -195,10 +195,10 @@ Todas, exceto `login` e `refresh`, exigem o cabeçalho `Authorization: Bearer <t
 ### 8.1 Fluxo manual (sempre disponível)
 Após o pré-cadastro, a pessoa vê os contatos e as chaves Pix de cada distrito, com a orientação de **conferir o nome do titular** e **enviar o comprovante ao responsável do distrito**. A mensagem de WhatsApp já vai com protocolo, número de vagas e valor total. O responsável confirma o pagamento no painel (ou marca as parcelas do crediário). No cartão, ele pode gerar o link na própria InfinitePay.
 
-### 8.2 Link automático da InfinitePay (cartão)
+### 8.2 Link automático da InfinitePay (Pix e cartão)
 Ativado quando existe a variável `INFINITEPAY_HANDLE` (InfiniteTag, sem `$`). Sem ela, tudo segue pelo fluxo manual.
 
-1. `register.js`, para inscrições no cartão, chama `ensureLink` e devolve `payUrl`. O botão **Finalizar pagamento** aparece na confirmação e na consulta (`/consulta`).
+1. `register.js`, para inscrições no **Pix ou no cartão**, chama `ensureLink` e devolve `payUrl`. O botão **Finalizar pagamento** aparece na confirmação e na consulta (`/consulta`).
 2. `POST https://api.checkout.infinitepay.io/links` com `handle`, `order_nsu = protocolo`, item único com o **preço-base** em centavos, `redirect_url` (`/consulta?protocolo=...`) e `webhook_url` (`/api/infinitepay-webhook`). A InfinitePay soma a taxa do parcelamento conforme as parcelas escolhidas no checkout.
 3. O link fica em `payment.checkoutUrl`.
 4. Ao pagar, a InfinitePay envia o aviso ao webhook. **O aviso não é assinado**, então o servidor: (a) exige que o `order_nsu` seja um protocolo existente; (b) confirma o pagamento em `POST /payment_check`; (c) compara o valor da fatura com o preço-base; (d) só então grava `paid = true` e `status = confirmada`. Reenvios do mesmo `transaction_nsu` são ignorados.
@@ -276,9 +276,9 @@ node server.js      # http://localhost:3000 (admin em /admin)
 
 ## 13. Limitações conhecidas e ideias futuras
 
-- Pré-cadastros não reservam vaga; o total confirmado pode passar de 250 se várias confirmações forem feitas ao mesmo tempo (a trava só vale para novos cadastros).
+- Pré-cadastros não reservam vaga e não há trava automática: o total confirmado pode passar de 250, e o painel avisa deixando o número em vermelho.
 - A resposta de criação do link da InfinitePay não é documentada em detalhe; o código procura a primeira URL `https` na resposta.
 - O aviso (webhook) da InfinitePay não é assinado; a proteção é a conferência em `payment_check`.
-- O Pix pelas chaves dos distritos é confirmado manualmente. Um link automático de Pix pelo mesmo checkout é possível, mas ainda não foi implementado.
+- O Pix pelas chaves dos distritos continua disponível e é confirmado manualmente. O link automático também atende o Pix: a inscrição de Pix só é confirmada sozinha se o pagamento for feito **por Pix**. Se a pessoa pagar no cartão um link de Pix (que tem 10% de desconto), a inscrição não é confirmada, e o painel mostra "ATENÇÃO: pagamento em forma diferente da escolhida" para o admin cobrar a diferença ou estornar.
 - Controle de vagas por quarto ainda não existe (aguardando a capacidade de cada quarto).
 - Consolidar vários eventos no mesmo painel é uma ideia futura (nada implementado).
