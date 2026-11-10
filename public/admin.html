@@ -73,14 +73,14 @@ input:focus,select:focus{outline:0;box-shadow:4px 4px 0 var(--o)}
 .actions{display:flex;flex-wrap:wrap;gap:10px}
 
 /* Resumo: 3 blocos em cima + 3 embaixo */
-.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;margin-bottom:32px}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:22px;margin-bottom:32px}
 .stat{min-width:0;padding:18px 20px 16px;background:#fff;border:3px solid var(--k);box-shadow:5px 5px 0 var(--k)}
 .stat b{display:block;font:400 clamp(2rem,4vw,2.8rem)/1.05 var(--disp);color:var(--n);white-space:nowrap}
 .stat span{display:block;font:800 .68rem var(--txt);text-transform:uppercase;letter-spacing:.08em;color:#44546e}
 .stat.hi{background:var(--n);box-shadow:5px 5px 0 var(--o)}
 .stat.hi b{color:var(--y)}.stat.hi span{color:#d9e3f3}
-.stat.money{background:var(--y)}
-.stat.money b{font-size:clamp(1.7rem,3.4vw,2.4rem)}
+.stat.money{background:var(--y);padding:12px 18px 10px}
+.stat.money b{font-size:clamp(1.5rem,2.8vw,2rem)}
 .stat.money em{display:block;margin-top:4px;font:700 .8rem var(--txt);font-style:normal}
 
 /* Filtros */
@@ -156,7 +156,32 @@ dialog{margin:auto;border:3px solid var(--k);box-shadow:9px 9px 0 var(--k);paddi
 .pg-b:hover:not(:disabled){transform:translate(2px,2px);box-shadow:2px 2px 0 var(--o)}
 .pg-b:disabled{background:#fff;color:#9aa5b8;box-shadow:none;cursor:not-allowed}
 .pg-i{font:700 .95rem var(--txt);color:var(--k)}
-.stat .of{font:700 .95rem var(--txt);color:#44546e}.stat em{display:block;font:700 .72rem var(--txt);font-style:normal;color:#44546e;margin-top:4px}.stat.full b{color:var(--red)}
+.stat.conf{grid-column:span 2;padding:12px 18px 10px;background:var(--n);box-shadow:5px 5px 0 var(--o)}
+.stat.conf>span{color:#d9e3f3;margin-top:4px}
+.stat.conf b{color:var(--y);font-size:clamp(1.6rem,3vw,2.1rem)}
+.stat.conf b small{font:700 1rem var(--txt);color:#d9e3f3;margin-left:2px}
+.stat.conf .bar{height:6px;margin-top:6px;background:rgba(255,255,255,.18);border:2px solid rgba(255,255,255,.35)}
+.stat.conf .bar i{display:block;height:100%;background:var(--y)}
+.stat.conf .bar.over i{background:#ff6b5a}
+.stat.conf.full b{color:#ff8a7a}
+.conf-dists{display:grid;grid-template-columns:1fr 1fr;gap:0;margin-top:8px;border-top:2px solid var(--y)}
+.dist{min-width:0;text-align:center;padding-top:6px}
+.dist+.dist{border-left:2px solid var(--y)}
+.stat.conf .dist>span{color:#fff;font-size:.68rem}
+.stat.conf .dist b{font-size:1.15rem;margin-top:0}
+.stat.conf .dist b small{font-size:.8rem}
+.stat.conf .dist .bar{height:4px;margin:4px 14px 0}
+.histd>summary{cursor:pointer;list-style:none;display:flex;align-items:center;gap:8px;user-select:none}
+.histd>summary::-webkit-details-marker{display:none}
+.histd>summary::before{content:"▾";font-size:1.1rem;line-height:1;transition:transform .15s}
+.histd:not([open])>summary::before{transform:rotate(-90deg)}
+.histd>summary i{font-style:normal;padding:0 7px;border:2px solid var(--k);font-size:.7rem}
+.stat.money{grid-column:span 2}
+.mdists{display:grid;grid-template-columns:1fr 1fr;margin-top:8px;border-top:2px solid var(--k)}
+.mdist{min-width:0;text-align:center;padding-top:6px}
+.mdist+.mdist{border-left:2px solid var(--k)}
+.stat.money .mdist b{font-size:1.15rem;margin-top:0}
+.stat.money .mdist em{font-size:.72rem}
 dialog::backdrop{background:rgba(10,31,64,.62)}
 .dlg-h{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 16px;background:var(--n);color:#fff;position:sticky;top:0}
 .dlg-h .proto{font-size:1.6rem}
@@ -192,7 +217,12 @@ dialog::backdrop{background:rgba(10,31,64,.62)}
   .chips .chip{flex:1 1 auto;justify-content:space-between}
   .brand{font-size:1.25rem}.brand img{height:32px}.brand small{display:none}
   .stats{grid-template-columns:1fr 1fr;gap:12px}
-  .stat.hi,.stat.money{grid-column:span 2}
+  .stat.hi{grid-column:auto}.stat.conf,.stat.money{grid-column:span 2}
+.mdists{display:grid;grid-template-columns:1fr 1fr;margin-top:12px;border-top:2px solid var(--k)}
+.mdist{min-width:0;text-align:center;padding-top:10px}
+.mdist+.mdist{border-left:2px solid var(--k)}
+.stat.money .mdist b{font-size:1.4rem;margin-top:2px}
+.stat.money .mdist em{font-size:.72rem}
   .group{grid-template-columns:1fr}
   .actions .btn{flex:1 1 140px}
   .when{display:none}
@@ -239,6 +269,7 @@ dialog::backdrop{background:rgba(10,31,64,.62)}
       <button class="btn green sm" id="validate" type="button">✓ Validar entrada</button>
       <button class="btn light sm" id="reload" type="button">↻ Atualizar</button>
       <button class="btn sm" id="csv" type="button">⬇ Baixar CSV</button>
+      <button class="btn sm" id="presenca" type="button">⬇ Lista de presença (PDF)</button>
     </div>
   </div>
 
@@ -356,13 +387,18 @@ function render() {
   const confPeople = live.filter(x => x.r.status === 'confirmada').flatMap(x => x.m).length;
   const confDist = d => R.filter(r => r.status === 'confirmada').flatMap(r => r.participants).filter(p => p.district === d).length;
   const capLimit = cap && !F.lodge ? (F.dist ? cap.perDistrict : cap.total) : null;
-  const byDist = cap && cap.perDistrict && !F.dist && !F.lodge ? ['Veiga Jardim', 'Garavelo'].map(d => d + ' ' + confDist(d) + '/' + cap.perDistrict).join(' · ') : '';
+  const byDist = cap && cap.perDistrict && !F.dist && !F.lodge ? ['Veiga Jardim', 'Garavelo'].map(d => ({ name: d, n: confDist(d) })) : [];
+  const bar = (n, l) => `<div class="bar${n >= l ? ' over' : ''}"><i style="width:${Math.min(100, Math.round(n / l * 100))}%"></i></div>`;
   const full = capLimit && confPeople >= capLimit;
   // Recebido = pagamentos únicos confirmados + parcelas pagas; A receber = o restante das inscrições ativas
   const recvOf = r => r.payment.plan ? r.payment.plan.filter(i => i.paid).reduce((s, i) => s + i.amount, 0) : (r.status === 'confirmada' ? netOf(r) : 0);
   const ratio = x => (x.r.payment.total ? share(x.r, x.m) / x.r.payment.total : 1);
-  const received = live.reduce((s, x) => s + recvOf(x.r) * ratio(x), 0);
-  const pending = live.reduce((s, x) => s + (netOf(x.r) - recvOf(x.r)) * ratio(x), 0);
+  const moneyOf = d => {   // d = distrito (ou nada para o total)
+    const L = live.map(x => ({ r: x.r, m: d ? x.m.filter(p => p.district === d) : x.m })).filter(x => x.m.length);
+    return { rec: L.reduce((s, x) => s + recvOf(x.r) * ratio(x), 0), pen: L.reduce((s, x) => s + (netOf(x.r) - recvOf(x.r)) * ratio(x), 0) };
+  };
+  const tot = moneyOf(), received = tot.rec, pending = tot.pen;
+  const moneyDists = F.dist ? [] : ['Veiga Jardim', 'Garavelo'].map(d => ({ name: d, ...moneyOf(d) }));
   const sc = $('#scope');
   sc.hidden = !(F.lodge || F.dist);
   sc.textContent = 'Números filtrados: ' + [F.dist, F.lodge && (F.lodge === 'camping' ? 'Camping' : 'Dormitório')].filter(Boolean).join(' · ');
@@ -370,10 +406,13 @@ function render() {
   $('#stats').innerHTML =
     `<div class="stat hi"><b>${people.length}</b><span>Pessoas inscritas</span></div>
      <div class="stat"><b>${cnt('pre-cadastro')}</b><span>Pré-cadastros</span></div>
-     <div class="stat conf${full ? ' full' : ''}"><b>${confPeople}${capLimit ? `<small class="of"> de ${capLimit}</small>` : ''}</b><span>Pessoas confirmadas</span>${byDist ? `<em>${esc(byDist)}</em>` : ''}</div>
      <div class="stat"><b>${camp}</b><span>Camping</span></div>
      <div class="stat"><b>${people.length - camp}</b><span>Dormitório</span></div>
-     <div class="stat money"><b>${brl(received)}</b><span>Recebido (líquido)</span><em>A receber: ${brl(pending)}</em></div>`;
+     <div class="stat conf${full ? ' full' : ''}">
+       <b>${confPeople}${capLimit ? `<small> / ${capLimit}</small>` : ''}</b><span>Pessoas confirmadas</span>${capLimit ? bar(confPeople, capLimit) : ''}
+       ${byDist.length ? `<div class="conf-dists">${byDist.map(d => `<div class="dist"><span>${esc(d.name)}</span><b>${d.n}<small> / ${cap.perDistrict}</small></b>${bar(d.n, cap.perDistrict)}</div>`).join('')}</div>` : ''}
+     </div>
+     <div class="stat money"><b>${brl(received)}</b><span>Recebido (líquido)</span><em>A receber: ${brl(pending)}</em>${moneyDists.length ? `<div class="mdists">${moneyDists.map(d => `<div class="mdist"><span>${esc(d.name)}</span><b>${brl(d.rec)}</b><em>A receber: ${brl(d.pen)}</em></div>`).join('')}</div>` : ''}</div>`;
 
   // Filtros (contagens gerais, sem considerar os próprios filtros)
   const allPeople = R.filter(r => r.status !== 'cancelada').flatMap(r => r.participants);
@@ -493,7 +532,7 @@ function chgFill(r) {
 }
 function logBlock(r) {
   const l = (r.payment.log || []).slice().reverse();
-  return l.length ? `<div class="sec-t" style="margin-top:14px">Histórico</div><div class="hist">${l.map(e => `<div><b>${esc(ACT[e.action] || e.action)}${e.detail ? ' · ' + esc(e.detail) : ''}</b><small>${esc(e.by)} · ${dt(e.at)}</small></div>`).join('')}</div>` : '';
+  return l.length ? `<details class="histd" open style="margin-top:14px"><summary class="sec-t">Histórico <i>${l.length}</i></summary><div class="hist">${l.map(e => `<div><b>${esc(ACT[e.action] || e.action)}${e.detail ? ' · ' + esc(e.detail) : ''}</b><small>${esc(e.by)} · ${dt(e.at)}</small></div>`).join('')}</div></details>` : '';
 }
 function payBlock(r) {
   const pay = r.payment, pl = pay.plan, ap = approval(r);
@@ -653,6 +692,40 @@ $('#list').addEventListener('click', async e => {
 $('#csv').onclick = async () => {
   const r = await api('/api/admin/export.csv'); if (!r.ok) return toast('Erro ao gerar o CSV');
   const a = document.createElement('a'); a.href = URL.createObjectURL(await r.blob()); a.download = 'inscricoes.csv'; a.click();
+};
+
+// Lista de presença em PDF: confirmados, ordem alfabética, com campo para marcar presença
+function loadScript(src) { return new Promise((ok, no) => { const s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = no; document.head.appendChild(s); }); }
+$('#presenca').onclick = async () => {
+  const btn = $('#presenca'); btn.disabled = true;
+  try {
+    if (!window.jspdf) { await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js'); await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js'); }
+    const rows = [];
+    for (const r of data.registrations) {
+      if (r.status !== 'confirmada') continue;
+      r.participants.forEach((p, i) => {
+        const h = p.health || (i === 0 && r.info && r.info.health) || null;
+        const al = h && h.allergy && h.allergy.has ? (h.allergy.text || 'Sim') : '—';
+        rows.push([p.name, p.age, p.phone ? fmtPhone(p.phone) : '', p.district, al, '']);
+      });
+    }
+    if (!rows.length) { btn.disabled = false; return toast('Nenhuma inscrição confirmada para listar.'); }
+    rows.sort((a, b) => String(a[0]).localeCompare(String(b[0]), 'pt-BR', { sensitivity: 'base' }));
+    rows.forEach((x, i) => x.unshift(i + 1));
+    const doc = new window.jspdf.jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+    doc.setFontSize(15); doc.text('RECONNECT · Lista de presença', 14, 14);
+    doc.setFontSize(9); doc.text('Retiro de Jovens · 05 a 09/02/2027 · ' + rows.length + ' pessoas confirmadas · gerada em ' + new Date().toLocaleDateString('pt-BR'), 14, 20);
+    doc.autoTable({
+      startY: 24, head: [['Nº', 'Nome', 'Idade', 'Telefone', 'Igreja', 'Alergias', 'Presença']], body: rows,
+      styles: { fontSize: 9, cellPadding: 2.2, lineColor: [30, 30, 30], lineWidth: 0.1, valign: 'middle' },
+      headStyles: { fillColor: [20, 40, 90], textColor: 255 },
+      columnStyles: { 0: { cellWidth: 10 }, 2: { cellWidth: 14 }, 3: { cellWidth: 34 }, 4: { cellWidth: 32 }, 6: { cellWidth: 24 } },
+      didDrawCell: d => { if (d.section === 'body' && d.column.index === 6) { const s = 4.5; doc.setDrawColor(30); doc.rect(d.cell.x + d.cell.width / 2 - s / 2, d.cell.y + d.cell.height / 2 - s / 2, s, s); } },
+      didDrawPage: () => { doc.setFontSize(8); doc.text('Página ' + doc.internal.getNumberOfPages(), 283, 204, { align: 'right' }); }
+    });
+    doc.save('lista-de-presenca.pdf');
+  } catch (e) { console.error('pdf', e); toast('Não foi possível gerar o PDF. Verifique a internet.'); }
+  btn.disabled = false;
 };
 
 // Zoom da tela em porcentagem (só no computador; lembra a escolha)
